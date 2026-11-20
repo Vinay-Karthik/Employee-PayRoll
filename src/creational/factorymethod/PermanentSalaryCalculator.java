@@ -1,13 +1,15 @@
 package creational.factorymethod;
 
+import java.math.BigDecimal;
+
 /**
  * Permanent employees: Basic + HRA + Allowances.
  */
 public class PermanentSalaryCalculator implements SalaryCalculator {
 
     @Override
-    public double calculateGross(SalaryComponents components) {
-        return components.getBasic() + components.getHra() + components.getAllowances();
+    public BigDecimal calculateGross(SalaryComponents components) {
+        return components.getBasic().add(components.getHra()).add(components.getAllowances());
     }
 
     @Override

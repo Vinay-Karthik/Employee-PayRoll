@@ -1,5 +1,6 @@
 package service;
 
+import creational.builder.PayrollRequest;
 import model.Employee;
 import model.PaySlip;
 
@@ -18,6 +19,14 @@ public interface PayrollService {
     boolean removeEmployee(int id);
     Optional<PaySlip> processEmployeePaySlip(int id);
     List<PaySlip> processAllPaySlips();
+
+    /**
+     * Processes a PayrollRequest built via the Builder pattern.
+     * Uses the Factory Method (salary calculator) and Abstract Factory
+     * (tax regime components) creational patterns internally.
+     */
+    PaySlip processPayrollRequest(PayrollRequest request);
+
     String generatePayrollSummaryReport(List<PaySlip> paySlips);
     void exportSummaryReport(String reportContent, String destination) throws IOException;
 }

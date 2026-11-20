@@ -1,5 +1,6 @@
 package ui;
 
+import creational.singleton.PayrollConfig;
 import model.Employee;
 import model.PaySlip;
 
@@ -10,6 +11,8 @@ import java.util.List;
  * Does not handle domain logic or direct user input parsing.
  */
 public class ConsoleView {
+
+    private final String currency = PayrollConfig.getInstance().getCurrency();
 
     public void displayWelcome() {
         System.out.println("==================================================");
@@ -24,8 +27,9 @@ public class ConsoleView {
         System.out.println("3. Calculate & print payslip for an employee");
         System.out.println("4. Process & export full payroll report");
         System.out.println("5. Delete an employee");
-        System.out.println("6. Exit");
-        System.out.print("Enter choice (1-6): ");
+        System.out.println("6. Quick payroll via template & request (Builder/Prototype)");
+        System.out.println("7. Exit");
+        System.out.print("Enter choice (1-7): ");
     }
 
     public void displayEmployees(List<Employee> employees) {
@@ -51,11 +55,11 @@ public class ConsoleView {
         System.out.println("Role Category : " + slip.roleCategory());
         System.out.println("Bank Account  : " + slip.bankAccountNumber());
         System.out.println("----------------------------------------------");
-        System.out.printf("Gross Earnings : $%.2f\n", slip.grossPay());
-        System.out.printf("Tax Withholding: $%.2f\n", slip.taxWithholding());
-        System.out.printf("Deductions     : $%.2f\n", slip.deductions());
+        System.out.printf("Gross Earnings : %s %.2f\n", currency, slip.grossPay());
+        System.out.printf("Tax Withholding: %s %.2f\n", currency, slip.taxWithholding());
+        System.out.printf("Deductions     : %s %.2f\n", currency, slip.deductions());
         System.out.println("----------------------------------------------");
-        System.out.printf("NET PAY        : $%.2f\n", slip.netPay());
+        System.out.printf("NET PAY        : %s %.2f\n", currency, slip.netPay());
         System.out.println("==============================================\n");
     }
 

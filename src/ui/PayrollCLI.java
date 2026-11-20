@@ -1,9 +1,16 @@
 package ui;
 
+import creational.abstractfactory.TaxRegime;
+import creational.builder.PayrollRequest;
+import creational.prototype.PayrollTemplate;
+import creational.prototype.PayrollTemplateCatalog;
+import creational.singleton.PayrollConfig;
 import model.*;
 import service.PayrollService;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Scanner;
@@ -37,7 +44,7 @@ public class PayrollCLI {
             try {
                 choice = Integer.parseInt(input);
             } catch (NumberFormatException e) {
-                view.displayMessage("Invalid input! Please enter a number between 1 and 6.");
+                view.displayMessage("Invalid input! Please enter a number between 1 and 7.");
                 continue;
             }
 
@@ -47,11 +54,12 @@ public class PayrollCLI {
                 case 3 -> handleIndividualPaySlip();
                 case 4 -> handleFullPayroll();
                 case 5 -> handleDeleteEmployee();
-                case 6 -> {
+                case 6 -> handleTemplatePayrollRequest();
+                case 7 -> {
                     running = false;
                     view.displayMessage("Exiting Payroll Application. Goodbye!");
                 }
-                default -> view.displayMessage("Invalid selection. Please choose an option from 1 to 6.");
+                default -> view.displayMessage("Invalid selection. Please choose an option from 1 to 7.");
             }
         }
     }
@@ -92,28 +100,28 @@ public class PayrollCLI {
             Employee newEmployee = switch (type) {
                 case 1 -> {
                     System.out.print("Enter Monthly Base Salary: ");
-                    double salary = Double.parseDouble(scanner.nextLine().trim());
+                    BigDecimal salary = parseAmount(scanner.nextLine());
                     System.out.print("Enter Monthly Bonus: ");
-                    double bonus = Double.parseDouble(scanner.nextLine().trim());
+                    BigDecimal bonus = parseAmount(scanner.nextLine());
                     yield new FullTimeEmployee(id, name, email, dept, account, salary, bonus);
                 }
                 case 2 -> {
                     System.out.print("Enter Hourly Rate: ");
-                    double rate = Double.parseDouble(scanner.nextLine().trim());
+                    BigDecimal rate = parseAmount(scanner.nextLine());
                     System.out.print("Enter Hours Worked this month: ");
-                    double hours = Double.parseDouble(scanner.nextLine().trim());
+                    BigDecimal hours = parseAmount(scanner.nextLine());
                     yield new PartTimeEmployee(id, name, email, dept, account, rate, hours);
                 }
                 case 3 -> {
                     System.out.print("Enter Contractor Hourly Rate: ");
-                    double rate = Double.parseDouble(scanner.nextLine().trim());
+                    BigDecimal rate = parseAmount(scanner.nextLine());
                     System.out.print("Enter Billed Hours: ");
-                    double hours = Double.parseDouble(scanner.nextLine().trim());
+                    BigDecimal hours = parseAmount(scanner.nextLine());
                     yield new ContractorEmployee(id, name, email, dept, account, rate, hours);
                 }
                 case 4 -> {
                     System.out.print("Enter Intern Monthly Stipend: ");
-                    double stipend = Double.parseDouble(scanner.nextLine().trim());
+                    BigDecimal stipend = parseAmount(scanner.nextLine());
                     yield new InternEmployee(id, name, email, dept, account, stipend);
                 }
                 default -> throw new IllegalArgumentException("Unknown employee role type: " + type);
@@ -126,43 +134,6 @@ public class PayrollCLI {
         } catch (IllegalArgumentException e) {
             view.displayMessage("Validation error: " + e.getMessage());
         }
-    }
-
-    private String promptDepartment() {
-        List<String> departments = payrollService.getAllEmployees().stream()
-                .map(Employee::getDepartment)
-                .distinct()
-                .sorted()
-                .toList();
-
-        if (!departments.isEmpty()) {
-            view.displayMessage("Existing departments:");
-            for (int i = 0; i < departments.size(); i++) {
-                System.out.printf("  %d. %s%n", i + 1, departments.get(i));
-            }
-        }
-
-        System.out.print("Select department");
-        if (!departments.isEmpty()) {
-            System.out.print(" (1-" + departments.size() + ")");
-        }
-        System.out.print(" or enter a new department name: ");
-
-        String input = scanner.nextLine().trim();
-        try {
-            int choice = Integer.parseInt(input);
-            if (choice >= 1 && choice <= departments.size()) {
-                return departments.get(choice - 1);
-            }
-            throw new IllegalArgumentException("Invalid department selection: " + choice);
-        } catch (NumberFormatException ignored) {
-            // Not a number - treat as a new department name
-        }
-
-        if (input.isEmpty()) {
-            throw new IllegalArgumentException("Department cannot be empty");
-        }
-        return input;
     }
 
     private void handleIndividualPaySlip() {
@@ -210,6 +181,132 @@ public class PayrollCLI {
             }
         } catch (NumberFormatException e) {
             view.displayMessage("Please enter a valid numeric Employee ID.");
+        }
+    }
+
+    /**
+     * Integrated creational-pattern flow:
+     * Prototype (clone a PayrollTemplate) -> customize clone ->
+     * Builder (construct PayrollRequest) -> service processes it via
+     * Factory Method + Abstract Factory -> PaySlip.
+     */
+    private void handleTemplatePayrollRequest() {
+        try {
+            List<PayrollTemplate> templates = PayrollTemplateCatalog.getTemplates();
+            view.displayMessage("\nAvailable payroll templates:");
+            for (int i = 0; i < templates.size(); i++) {
+                PayrollTemplate t = templates.get(i);
+                System.out.printf("  %d. %s (%s)%n", i + 1, t.getTemplateName(), t.getEmployeeType());
+            }
+
+            System.out.print("Select template (1-" + templates.size() + "): ");
+            int choice = Integer.parseInt(scanner.nextLine().trim());
+            if (choice < 1 || choice > templates.size()) {
+                view.displayMessage("Invalid template selection.");
+                return;
+            }
+
+            // Prototype pattern: clone the template so the original stays untouched
+            PayrollTemplate template = templates.get(choice - 1).clone();
+            view.displayMessage("Using template: " + template.getTemplateName());
+
+            // Allow customizing the clone
+            System.out.print("Enter new bonus details (Enter to keep '" + template.getBonusDetails() + "'): ");
+            String bonusInput = scanner.nextLine().trim();
+            if (!bonusInput.isEmpty()) {
+                template.setBonusDetails(bonusInput);
+            }
+
+            PayrollRequest.Builder requestBuilder = new PayrollRequest.Builder()
+                    .employeeType(template.getEmployeeType())
+                    .salaryComponents(template.getSalaryComponents())
+                    .bonusDetails(template.getBonusDetails());
+
+            for (Map.Entry<String, BigDecimal> entry : template.getDeductions().entrySet()) {
+                requestBuilder.addDeduction(entry.getKey(), entry.getValue());
+            }
+
+            System.out.print("Enter Employee ID: ");
+            requestBuilder.employeeId(Integer.parseInt(scanner.nextLine().trim()));
+
+            System.out.print("Enter Employee Name: ");
+            requestBuilder.employeeName(scanner.nextLine().trim());
+
+            requestBuilder.department(promptDepartment());
+
+            System.out.print("Enter Bank Account Number (Enter for 'N/A'): ");
+            String account = scanner.nextLine().trim();
+            if (!account.isEmpty()) {
+                requestBuilder.bankAccountNumber(account);
+            }
+
+            PayrollConfig config = PayrollConfig.getInstance();
+            System.out.print("Enter Financial Year [" + config.getFinancialYear() + "]: ");
+            String fy = scanner.nextLine().trim();
+            requestBuilder.financialYear(fy.isEmpty() ? config.getFinancialYear() : fy);
+
+            System.out.print("Enter Tax Regime (1=OLD, 2=NEW) [" + config.getDefaultTaxRegime() + "]: ");
+            String regimeInput = scanner.nextLine().trim();
+            TaxRegime regime = config.getDefaultTaxRegime();
+            if (regimeInput.equals("1")) {
+                regime = TaxRegime.OLD;
+            } else if (regimeInput.equals("2")) {
+                regime = TaxRegime.NEW;
+            }
+            requestBuilder.taxRegime(regime);
+
+            PayrollRequest request = requestBuilder.build();
+            PaySlip slip = payrollService.processPayrollRequest(request);
+            view.displayPaySlip(slip);
+        } catch (NumberFormatException e) {
+            view.displayMessage("Input error: Please enter valid numeric values.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            view.displayMessage("Validation error: " + e.getMessage());
+        }
+    }
+
+    private String promptDepartment() {
+        List<String> departments = payrollService.getAllEmployees().stream()
+                .map(Employee::getDepartment)
+                .distinct()
+                .sorted()
+                .toList();
+
+        if (!departments.isEmpty()) {
+            view.displayMessage("Existing departments:");
+            for (int i = 0; i < departments.size(); i++) {
+                System.out.printf("  %d. %s%n", i + 1, departments.get(i));
+            }
+        }
+
+        System.out.print("Select department");
+        if (!departments.isEmpty()) {
+            System.out.print(" (1-" + departments.size() + ")");
+        }
+        System.out.print(" or enter a new department name: ");
+
+        String input = scanner.nextLine().trim();
+        try {
+            int choice = Integer.parseInt(input);
+            if (choice >= 1 && choice <= departments.size()) {
+                return departments.get(choice - 1);
+            }
+            throw new IllegalArgumentException("Invalid department selection: " + choice);
+        } catch (NumberFormatException ignored) {
+            // Not a number - treat as a new department name
+        }
+
+        if (input.isEmpty()) {
+            throw new IllegalArgumentException("Department cannot be empty");
+        }
+        return input;
+    }
+
+    private static BigDecimal parseAmount(String input) {
+        try {
+            return new BigDecimal(input.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid amount: '" + input + "'");
         }
     }
 }

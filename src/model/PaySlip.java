@@ -1,8 +1,11 @@
 package model;
 
+import java.math.BigDecimal;
+
 /**
  * Value Object / DTO representing the outcome of a payroll calculation for an employee.
  * Immutable to ensure thread safety and data integrity.
+ * All monetary values use BigDecimal to avoid floating-point errors.
  */
 public record PaySlip(
         int employeeId,
@@ -10,10 +13,10 @@ public record PaySlip(
         String department,
         String roleCategory,
         String bankAccountNumber,
-        double grossPay,
-        double taxWithholding,
-        double deductions,
-        double netPay
+        BigDecimal grossPay,
+        BigDecimal taxWithholding,
+        BigDecimal deductions,
+        BigDecimal netPay
 ) {
     public PaySlip {
         if (employeeName == null || employeeName.isBlank()) {

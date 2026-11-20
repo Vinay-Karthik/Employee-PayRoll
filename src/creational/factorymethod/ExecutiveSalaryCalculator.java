@@ -1,13 +1,15 @@
 package creational.factorymethod;
 
+import java.math.BigDecimal;
+
 /**
  * Executive employees: Fixed salary + Bonus + Benefits.
  */
 public class ExecutiveSalaryCalculator implements SalaryCalculator {
 
     @Override
-    public double calculateGross(SalaryComponents components) {
-        return components.getFixedSalary() + components.getBonus() + components.getBenefits();
+    public BigDecimal calculateGross(SalaryComponents components) {
+        return components.getFixedSalary().add(components.getBonus()).add(components.getBenefits());
     }
 
     @Override

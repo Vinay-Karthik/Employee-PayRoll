@@ -1,13 +1,15 @@
 package creational.factorymethod;
 
+import java.math.BigDecimal;
+
 /**
  * Sales employees: Fixed salary + Commission.
  */
 public class SalesSalaryCalculator implements SalaryCalculator {
 
     @Override
-    public double calculateGross(SalaryComponents components) {
-        return components.getFixedSalary() + components.getCommission();
+    public BigDecimal calculateGross(SalaryComponents components) {
+        return components.getFixedSalary().add(components.getCommission());
     }
 
     @Override

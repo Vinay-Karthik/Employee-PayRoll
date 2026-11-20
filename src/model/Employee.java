@@ -1,5 +1,6 @@
 package model;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 /**
@@ -66,9 +67,10 @@ public abstract class Employee {
     }
 
     // Abstract polymorphic contracts
-    public abstract double calculateGrossPay();
-    public abstract double calculateTax();
-    public abstract double calculateDeductions();
+    // All monetary values use BigDecimal to avoid floating-point errors.
+    public abstract BigDecimal calculateGrossPay();
+    public abstract BigDecimal calculateTax();
+    public abstract BigDecimal calculateDeductions();
     public abstract String getRoleCategory();
     public abstract int getTypeCode();
     public abstract String getPayDetailsSummary();
@@ -78,10 +80,10 @@ public abstract class Employee {
      * Guarantees DRY (Don't Repeat Yourself) principle across the application.
      */
     public PaySlip generatePaySlip() {
-        double gross = calculateGrossPay();
-        double tax = calculateTax();
-        double deductions = calculateDeductions();
-        double net = gross - tax - deductions;
+        BigDecimal gross = calculateGrossPay();
+        BigDecimal tax = calculateTax();
+        BigDecimal deductions = calculateDeductions();
+        BigDecimal net = gross.subtract(tax).subtract(deductions);
         return new PaySlip(id, name, department, getRoleCategory(), bankAccountNumber, gross, tax, deductions, net);
     }
 }

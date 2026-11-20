@@ -3,6 +3,7 @@ package creational.prototype;
 import creational.factorymethod.EmployeeType;
 import creational.factorymethod.SalaryComponents;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,7 +24,7 @@ public class PayrollTemplate implements Cloneable {
     private String templateName;
     private EmployeeType employeeType;
     private SalaryComponents salaryComponents;
-    private Map<String, Double> deductions;
+    private Map<String, BigDecimal> deductions;
     private String bonusDetails;
 
     public PayrollTemplate(String templateName, EmployeeType employeeType,
@@ -64,7 +65,7 @@ public class PayrollTemplate implements Cloneable {
         return salaryComponents;
     }
 
-    public Map<String, Double> getDeductions() {
+    public Map<String, BigDecimal> getDeductions() {
         return Collections.unmodifiableMap(deductions);
     }
 
@@ -85,12 +86,12 @@ public class PayrollTemplate implements Cloneable {
         this.salaryComponents = Objects.requireNonNull(salaryComponents, "Salary components must not be null");
     }
 
-    public void addDeduction(String name, double amount) {
+    public void addDeduction(String name, BigDecimal amount) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Deduction name must not be blank");
         }
-        if (amount < 0) {
-            throw new IllegalArgumentException("Deduction amount cannot be negative: " + amount);
+        if (amount == null || amount.signum() < 0) {
+            throw new IllegalArgumentException("Deduction amount must be non-negative");
         }
         this.deductions.put(name, amount);
     }

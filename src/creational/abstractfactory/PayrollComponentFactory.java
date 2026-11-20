@@ -23,4 +23,15 @@ public abstract class PayrollComponentFactory {
      * Returns the tax regime this factory produces components for.
      */
     public abstract TaxRegime getRegime();
+
+    /**
+     * Selects the concrete factory family for the given tax regime.
+     * Keeps callers decoupled from the concrete factory classes.
+     */
+    public static PayrollComponentFactory forRegime(TaxRegime regime) {
+        return switch (regime) {
+            case OLD -> new OldTaxRegimeFactory();
+            case NEW -> new NewTaxRegimeFactory();
+        };
+    }
 }

@@ -1,14 +1,16 @@
 package creational.abstractfactory;
 
+import java.math.BigDecimal;
+
 /**
  * Old tax regime deduction calculator: Provident Fund at 12% of gross.
  */
 public class OldDeductionCalculator implements DeductionCalculator {
-    private static final double PF_RATE = 0.12;
+    private static final BigDecimal PF_RATE = new BigDecimal("0.12");
 
     @Override
-    public double calculateDeductions(double grossPay) {
-        return grossPay * PF_RATE;
+    public BigDecimal calculateDeductions(BigDecimal grossPay) {
+        return grossPay.multiply(PF_RATE);
     }
 
     @Override

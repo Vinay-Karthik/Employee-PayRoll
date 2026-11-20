@@ -1,22 +1,25 @@
 package creational.factorymethod;
 
+import java.math.BigDecimal;
+
 /**
  * Holds all possible salary components for every employee type.
  * Not all fields are used by every calculator - each calculator
  * reads only the components relevant to its salary structure.
  *
+ * All monetary values use BigDecimal to avoid floating-point errors.
  * Mutable so it can be reused as a nested object inside prototypes
  * and payroll requests; a copy constructor supports deep copying.
  */
 public class SalaryComponents {
-    private double basic;
-    private double hra;
-    private double allowances;
-    private double fixedContractAmount;
-    private double fixedSalary;
-    private double commission;
-    private double bonus;
-    private double benefits;
+    private BigDecimal basic = BigDecimal.ZERO;
+    private BigDecimal hra = BigDecimal.ZERO;
+    private BigDecimal allowances = BigDecimal.ZERO;
+    private BigDecimal fixedContractAmount = BigDecimal.ZERO;
+    private BigDecimal fixedSalary = BigDecimal.ZERO;
+    private BigDecimal commission = BigDecimal.ZERO;
+    private BigDecimal bonus = BigDecimal.ZERO;
+    private BigDecimal benefits = BigDecimal.ZERO;
 
     public SalaryComponents() {
     }
@@ -35,40 +38,44 @@ public class SalaryComponents {
         this.benefits = other.benefits;
     }
 
-    private static void requireNonNegative(String field, double value) {
-        if (value < 0) {
+    private static BigDecimal requireNonNegative(String field, BigDecimal value) {
+        if (value == null) {
+            throw new IllegalArgumentException(field + " must not be null");
+        }
+        if (value.signum() < 0) {
             throw new IllegalArgumentException(field + " cannot be negative: " + value);
         }
+        return value;
     }
 
-    public double getBasic() { return basic; }
-    public void setBasic(double basic) { requireNonNegative("Basic", basic); this.basic = basic; }
+    public BigDecimal getBasic() { return basic; }
+    public void setBasic(BigDecimal basic) { this.basic = requireNonNegative("Basic", basic); }
 
-    public double getHra() { return hra; }
-    public void setHra(double hra) { requireNonNegative("HRA", hra); this.hra = hra; }
+    public BigDecimal getHra() { return hra; }
+    public void setHra(BigDecimal hra) { this.hra = requireNonNegative("HRA", hra); }
 
-    public double getAllowances() { return allowances; }
-    public void setAllowances(double allowances) { requireNonNegative("Allowances", allowances); this.allowances = allowances; }
+    public BigDecimal getAllowances() { return allowances; }
+    public void setAllowances(BigDecimal allowances) { this.allowances = requireNonNegative("Allowances", allowances); }
 
-    public double getFixedContractAmount() { return fixedContractAmount; }
-    public void setFixedContractAmount(double fixedContractAmount) { requireNonNegative("Fixed contract amount", fixedContractAmount); this.fixedContractAmount = fixedContractAmount; }
+    public BigDecimal getFixedContractAmount() { return fixedContractAmount; }
+    public void setFixedContractAmount(BigDecimal fixedContractAmount) { this.fixedContractAmount = requireNonNegative("Fixed contract amount", fixedContractAmount); }
 
-    public double getFixedSalary() { return fixedSalary; }
-    public void setFixedSalary(double fixedSalary) { requireNonNegative("Fixed salary", fixedSalary); this.fixedSalary = fixedSalary; }
+    public BigDecimal getFixedSalary() { return fixedSalary; }
+    public void setFixedSalary(BigDecimal fixedSalary) { this.fixedSalary = requireNonNegative("Fixed salary", fixedSalary); }
 
-    public double getCommission() { return commission; }
-    public void setCommission(double commission) { requireNonNegative("Commission", commission); this.commission = commission; }
+    public BigDecimal getCommission() { return commission; }
+    public void setCommission(BigDecimal commission) { this.commission = requireNonNegative("Commission", commission); }
 
-    public double getBonus() { return bonus; }
-    public void setBonus(double bonus) { requireNonNegative("Bonus", bonus); this.bonus = bonus; }
+    public BigDecimal getBonus() { return bonus; }
+    public void setBonus(BigDecimal bonus) { this.bonus = requireNonNegative("Bonus", bonus); }
 
-    public double getBenefits() { return benefits; }
-    public void setBenefits(double benefits) { requireNonNegative("Benefits", benefits); this.benefits = benefits; }
+    public BigDecimal getBenefits() { return benefits; }
+    public void setBenefits(BigDecimal benefits) { this.benefits = requireNonNegative("Benefits", benefits); }
 
     @Override
     public String toString() {
         return String.format(
-                "SalaryComponents{basic=%.2f, hra=%.2f, allowances=%.2f, fixedContract=%.2f, fixedSalary=%.2f, commission=%.2f, bonus=%.2f, benefits=%.2f}",
+                "SalaryComponents{basic=%s, hra=%s, allowances=%s, fixedContract=%s, fixedSalary=%s, commission=%s, bonus=%s, benefits=%s}",
                 basic, hra, allowances, fixedContractAmount, fixedSalary, commission, bonus, benefits);
     }
 }

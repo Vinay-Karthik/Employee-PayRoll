@@ -1,0 +1,13 @@
+# Build output
+out/
+build/
+*.class
+
+# Generated payroll reports
+payroll_summary_report.txt
+*.txt
+
+# IDE
+.idea/
+*.iml
+.vscode/

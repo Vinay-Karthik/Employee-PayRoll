@@ -1,19 +1,21 @@
 package creational.abstractfactory;
 
+import java.math.BigDecimal;
+
 /**
  * Old tax regime tax calculator: flat 20% rate with 4% surcharge
  * on income above the exemption threshold.
  */
 public class OldTaxCalculator implements TaxCalculator {
-    private static final double TAX_RATE = 0.20;
-    private static final double SURCHARGE_THRESHOLD = 50000.0;
-    private static final double SURCHARGE_RATE = 0.04;
+    private static final BigDecimal TAX_RATE = new BigDecimal("0.20");
+    private static final BigDecimal SURCHARGE_THRESHOLD = new BigDecimal("50000.00");
+    private static final BigDecimal SURCHARGE_RATE = new BigDecimal("0.04");
 
     @Override
-    public double calculateTax(double grossPay) {
-        double tax = grossPay * TAX_RATE;
-        if (grossPay > SURCHARGE_THRESHOLD) {
-            tax += (grossPay - SURCHARGE_THRESHOLD) * SURCHARGE_RATE;
+    public BigDecimal calculateTax(BigDecimal grossPay) {
+        BigDecimal tax = grossPay.multiply(TAX_RATE);
+        if (grossPay.compareTo(SURCHARGE_THRESHOLD) > 0) {
+            tax = tax.add(grossPay.subtract(SURCHARGE_THRESHOLD).multiply(SURCHARGE_RATE));
         }
         return tax;
     }

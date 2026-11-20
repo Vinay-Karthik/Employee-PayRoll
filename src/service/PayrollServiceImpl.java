@@ -12,6 +12,8 @@ import model.Employee;
 import model.PaySlip;
 import report.ReportExporter;
 import repository.EmployeeRepository;
+import structural.adapter.EmployeeDirectory;
+import structural.adapter.RepositoryEmployeeDirectory;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -22,41 +24,64 @@ import java.util.function.Function;
 
 /**
  * Concrete implementation of PayrollService.
- * Coordinates repository, domain calculations, and report generation.
+ * Coordinates employee directory, domain calculations, and report generation.
  *
- * Creational pattern integration:
+ * Design Pattern Integration:
+ * - Structural Adapter: EmployeeDirectory interface decouples payroll processing from
+ *   the underlying employee data source (e.g. ExternalHRAdapter vs RepositoryEmployeeDirectory).
  * - Singleton: PayrollConfig provides default currency & fallback financial year.
  * - GoF Factory Method: SalaryCalculatorFactory defines the abstract creator whose
  *   subclasses instantiate specific SalaryCalculator products.
  * - Abstract Factory: PayrollComponentFactory provides regime-compatible
  *   tax and deduction calculators.
- * - Builder & Prototype: Request-specific parameters (e.g. financialYear, bonusDetails)
- *   are honored over global defaults and preserved on resulting PaySlips.
+ * - Builder & Prototype: Request-specific parameters are honored and preserved on PaySlips.
  */
 public class PayrollServiceImpl implements PayrollService {
+    private final EmployeeDirectory employeeDirectory;
     private final EmployeeRepository repository;
     private final ReportExporter reportExporter;
     private final Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver;
 
-    public PayrollServiceImpl(EmployeeRepository repository, ReportExporter reportExporter) {
-        this(repository, reportExporter, SalaryCalculatorFactory::forType);
-    }
-
-    public PayrollServiceImpl(EmployeeRepository repository, ReportExporter reportExporter,
+    /**
+     * Primary constructor injecting EmployeeDirectory via constructor injection (Adapter Pattern).
+     */
+    public PayrollServiceImpl(EmployeeDirectory employeeDirectory,
+                              EmployeeRepository repository,
+                              ReportExporter reportExporter,
                               Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver) {
+        this.employeeDirectory = Objects.requireNonNull(employeeDirectory, "EmployeeDirectory must not be null");
         this.repository = Objects.requireNonNull(repository, "Repository must not be null");
         this.reportExporter = Objects.requireNonNull(reportExporter, "Report exporter must not be null");
         this.salaryCalculatorFactoryResolver = Objects.requireNonNull(salaryCalculatorFactoryResolver, "Factory resolver must not be null");
     }
 
+    public PayrollServiceImpl(EmployeeDirectory employeeDirectory,
+                              EmployeeRepository repository,
+                              ReportExporter reportExporter) {
+        this(employeeDirectory, repository, reportExporter, SalaryCalculatorFactory::forType);
+    }
+
+    /**
+     * Overloaded constructor for backward compatibility.
+     * Uses RepositoryEmployeeDirectory as default adapter for EmployeeRepository.
+     */
+    public PayrollServiceImpl(EmployeeRepository repository, ReportExporter reportExporter) {
+        this(new RepositoryEmployeeDirectory(repository), repository, reportExporter, SalaryCalculatorFactory::forType);
+    }
+
+    public PayrollServiceImpl(EmployeeRepository repository, ReportExporter reportExporter,
+                              Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver) {
+        this(new RepositoryEmployeeDirectory(repository), repository, reportExporter, salaryCalculatorFactoryResolver);
+    }
+
     @Override
     public List<Employee> getAllEmployees() {
-        return repository.findAll();
+        return employeeDirectory.findAllEmployees();
     }
 
     @Override
     public Optional<Employee> getEmployeeById(int id) {
-        return repository.findById(id);
+        return employeeDirectory.findEmployeeById(id);
     }
 
     @Override
@@ -72,12 +97,12 @@ public class PayrollServiceImpl implements PayrollService {
 
     @Override
     public Optional<PaySlip> processEmployeePaySlip(int id) {
-        return repository.findById(id).map(Employee::generatePaySlip);
+        return employeeDirectory.findEmployeeById(id).map(Employee::generatePaySlip);
     }
 
     @Override
     public List<PaySlip> processAllPaySlips() {
-        return repository.findAll().stream()
+        return employeeDirectory.findAllEmployees().stream()
                 .map(Employee::generatePaySlip)
                 .toList();
     }

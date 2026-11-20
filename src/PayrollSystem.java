@@ -5,6 +5,10 @@ import repository.EmployeeRepository;
 import repository.InMemoryEmployeeRepository;
 import service.PayrollService;
 import service.PayrollServiceImpl;
+import structural.adapter.EmployeeDirectory;
+import structural.adapter.ExternalHRAdapter;
+import structural.adapter.ExternalHRService;
+import structural.adapter.RepositoryEmployeeDirectory;
 import ui.ConsoleView;
 import ui.PayrollCLI;
 
@@ -13,26 +17,31 @@ import java.util.Scanner;
 /**
  * Application Entry Point / Composition Root.
  *
- * Refactored using SOLID Principles and GoF Creational Design Patterns:
- * - Single Responsibility Principle (SRP): Acts solely as the composition root to wire together dependencies.
- * - Dependency Inversion Principle (DIP): High-level components depend on interfaces (EmployeeRepository, ReportExporter, PayrollService),
- *   and concrete implementations are injected here.
- * - GoF Factory Method: Demonstrates classic Creator hierarchy (SalaryCalculatorFactory subclasses) for employee salary calculation.
- * - GoF Abstract Factory: Regime-based tax and deduction component creation (PayrollComponentFactory).
- * - GoF Builder: Validated immutable request construction (PayrollRequest.Builder).
- * - GoF Prototype: Deep-copied customizable payroll templates (PayrollTemplate).
- * - GoF Singleton: Shared configuration provider (PayrollConfig).
+ * Demonstrates:
+ * - Structural Adapter Pattern: ExternalHRAdapter adapts third-party ExternalHRService
+ *   to the EmployeeDirectory target interface, which is injected into PayrollServiceImpl.
+ * - Pluggability: PayrollServiceImpl can seamlessly switch between ExternalHRAdapter
+ *   and RepositoryEmployeeDirectory with ZERO changes to the payroll service.
+ * - GoF Creational Patterns: Factory Method, Abstract Factory, Builder, Prototype, Singleton.
  */
 public class PayrollSystem {
     private static final String DEFAULT_REPORT_FILE = "payroll_summary_report.txt";
 
     public static void main(String[] args) {
-        // Dependency Injection & Configuration Setup
+        // Core persistence and reporting dependencies
         EmployeeRepository repository = new InMemoryEmployeeRepository();
         ReportExporter reportExporter = new FileReportExporter();
 
-        // Inject dependencies including GoF Factory Method creator resolver
+        // 1. Adapter Pattern Setup:
+        // ExternalHRService is the Adaptee (simulating a third-party HR API)
+        ExternalHRService externalHRService = new ExternalHRService();
+
+        // ExternalHRAdapter implements the EmployeeDirectory Target interface
+        EmployeeDirectory employeeDirectory = new ExternalHRAdapter(externalHRService);
+
+        // 2. Inject EmployeeDirectory into PayrollService via Constructor Injection
         PayrollService payrollService = new PayrollServiceImpl(
+                employeeDirectory,
                 repository,
                 reportExporter,
                 SalaryCalculatorFactory::forType

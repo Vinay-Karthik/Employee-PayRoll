@@ -1,11 +1,13 @@
 package decorator;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  * Concrete Decorator for Insurance Deduction.
  *
  * Single Responsibility: Subtracts insurance premium deduction from the salary.
+ * Enforces a consistent scale of 2 with RoundingMode.HALF_UP for all monetary amounts.
  * Validates that insurance deduction does not exceed the accumulated salary.
  */
 public class InsuranceDeductionDecorator extends SalaryDecorator {
@@ -21,6 +23,7 @@ public class InsuranceDeductionDecorator extends SalaryDecorator {
 
     /**
      * Constructs Insurance Deduction decorator with an explicit monetary deduction.
+     * Enforces consistent monetary scale (2 decimal places) and HALF_UP rounding.
      *
      * @param decoratedCalculator the calculator to decorate
      * @param insuranceDeduction explicit non-null, non-negative deduction amount
@@ -33,7 +36,7 @@ public class InsuranceDeductionDecorator extends SalaryDecorator {
         if (insuranceDeduction.signum() < 0) {
             throw new IllegalArgumentException("Insurance deduction cannot be negative: " + insuranceDeduction);
         }
-        this.insuranceDeduction = insuranceDeduction;
+        this.insuranceDeduction = insuranceDeduction.setScale(2, RoundingMode.HALF_UP);
     }
 
     /**
@@ -45,13 +48,13 @@ public class InsuranceDeductionDecorator extends SalaryDecorator {
      */
     @Override
     public BigDecimal calculateSalary() {
-        BigDecimal accumulatedSalary = super.calculateSalary();
+        BigDecimal accumulatedSalary = super.calculateSalary().setScale(2, RoundingMode.HALF_UP);
         if (insuranceDeduction.compareTo(accumulatedSalary) > 0) {
             throw new IllegalStateException(
                     "Insurance deduction (" + insuranceDeduction + ") cannot exceed accumulated salary (" + accumulatedSalary + ")"
             );
         }
-        return accumulatedSalary.subtract(insuranceDeduction);
+        return accumulatedSalary.subtract(insuranceDeduction).setScale(2, RoundingMode.HALF_UP);
     }
 
     @Override

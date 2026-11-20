@@ -3,6 +3,7 @@ package service;
 import calculator.SalaryCalculator;
 import calculator.SalaryCalculatorFactory;
 import config.PayrollConfig;
+import decorator.SalaryEnhancementPipeline;
 import integration.EmployeeDirectory;
 import integration.RepositoryEmployeeDirectory;
 import model.Employee;
@@ -185,5 +186,10 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     public void exportSummaryReport(String reportContent, String destination) throws IOException {
         reportExporter.export(reportContent, destination);
+    }
+
+    @Override
+    public SalaryEnhancementPipeline createSalaryEnhancementPipeline(BigDecimal baseSalary) {
+        return new SalaryEnhancementPipeline(baseSalary);
     }
 }

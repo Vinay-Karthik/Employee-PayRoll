@@ -1,10 +1,12 @@
 package service;
 
+import decorator.SalaryEnhancementPipeline;
 import model.Employee;
 import model.PaySlip;
 import model.PayrollRequest;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,4 +29,13 @@ public interface PayrollService {
 
     String generatePayrollSummaryReport(List<PaySlip> paySlips);
     void exportSummaryReport(String reportContent, String destination) throws IOException;
+
+    /**
+     * Creates a new dynamic salary enhancement pipeline for applying decorators.
+     * Enforces single-use decorator constraints and deduction limits outside the UI.
+     *
+     * @param baseSalary initial base salary
+     * @return initialized SalaryEnhancementPipeline
+     */
+    SalaryEnhancementPipeline createSalaryEnhancementPipeline(BigDecimal baseSalary);
 }

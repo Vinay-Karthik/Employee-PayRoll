@@ -7,6 +7,7 @@ import java.math.RoundingMode;
  * Concrete Decorator for Performance Bonus.
  *
  * Single Responsibility: Adds performance bonus to the salary.
+ * Enforces a consistent scale of 2 with RoundingMode.HALF_UP for all monetary amounts.
  */
 public class PerformanceBonusDecorator extends SalaryDecorator {
     private static final BigDecimal DEFAULT_BONUS_PERCENTAGE = new BigDecimal("0.10"); // 10% of base
@@ -24,6 +25,7 @@ public class PerformanceBonusDecorator extends SalaryDecorator {
 
     /**
      * Constructs Performance Bonus decorator with an explicit fixed monetary amount.
+     * Enforces consistent monetary scale (2 decimal places) and HALF_UP rounding.
      *
      * @param decoratedCalculator the calculator to decorate
      * @param bonusAmount explicit non-null, non-negative bonus amount
@@ -36,12 +38,12 @@ public class PerformanceBonusDecorator extends SalaryDecorator {
         if (bonusAmount.signum() < 0) {
             throw new IllegalArgumentException("Performance bonus cannot be negative: " + bonusAmount);
         }
-        this.bonusAmount = bonusAmount;
+        this.bonusAmount = bonusAmount.setScale(2, RoundingMode.HALF_UP);
     }
 
     @Override
     public BigDecimal calculateSalary() {
-        return super.calculateSalary().add(bonusAmount);
+        return super.calculateSalary().add(bonusAmount).setScale(2, RoundingMode.HALF_UP);
     }
 
     @Override

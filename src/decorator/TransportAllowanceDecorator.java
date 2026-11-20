@@ -1,11 +1,13 @@
 package decorator;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  * Concrete Decorator for Transport Allowance.
  *
  * Single Responsibility: Adds transport allowance to the salary.
+ * Enforces a consistent scale of 2 with RoundingMode.HALF_UP for all monetary amounts.
  */
 public class TransportAllowanceDecorator extends SalaryDecorator {
     private static final BigDecimal DEFAULT_TRANSPORT_ALLOWANCE = new BigDecimal("1600.00");
@@ -20,6 +22,7 @@ public class TransportAllowanceDecorator extends SalaryDecorator {
 
     /**
      * Constructs Transport Allowance decorator with an explicit monetary amount.
+     * Enforces consistent monetary scale (2 decimal places) and HALF_UP rounding.
      *
      * @param decoratedCalculator the calculator to decorate
      * @param transportAllowance explicit non-null, non-negative allowance amount
@@ -32,12 +35,12 @@ public class TransportAllowanceDecorator extends SalaryDecorator {
         if (transportAllowance.signum() < 0) {
             throw new IllegalArgumentException("Transport allowance cannot be negative: " + transportAllowance);
         }
-        this.transportAllowance = transportAllowance;
+        this.transportAllowance = transportAllowance.setScale(2, RoundingMode.HALF_UP);
     }
 
     @Override
     public BigDecimal calculateSalary() {
-        return super.calculateSalary().add(transportAllowance);
+        return super.calculateSalary().add(transportAllowance).setScale(2, RoundingMode.HALF_UP);
     }
 
     @Override

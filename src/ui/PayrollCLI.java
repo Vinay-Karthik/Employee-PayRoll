@@ -1,23 +1,23 @@
 package ui;
 
 import config.PayrollConfig;
-import decorator.*;
+import decorator.DecoratorType;
+import decorator.SalaryEnhancementPipeline;
 import model.*;
 import service.PayrollService;
 import tax.TaxRegime;
 
 import java.math.BigDecimal;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Scanner;
-import java.util.Set;
 
 /**
  * Controller for CLI interaction.
  * Coordinates user input with PayrollService and ConsoleView.
+ * Keeps business rules strictly outside this presentation controller.
  */
 public class PayrollCLI {
     private final PayrollService payrollService;
@@ -279,141 +279,71 @@ public class PayrollCLI {
     }
 
     /**
-     * Demonstrates dynamic runtime composition using the Decorator Pattern.
-     * Allows combining HRA, Transport Allowance, Performance Bonus, and Insurance Deductions.
-     * Prevents applying single-use decorators multiple times and uses configured currency throughout.
+     * Interactive console flow for dynamic salary enhancements using the Decorator Pattern.
+     * All business rules (duplicate prevention, deduction limits, decorator instantiation)
+     * are strictly delegated to SalaryEnhancementPipeline.
      */
     private void handleDynamicSalaryEnhancement() {
         view.displayMessage("\n=== Dynamic Salary Enhancement (Decorator Pattern) ===");
         try {
             System.out.print("Enter Base Salary: ");
             BigDecimal base = parseAmount(scanner.nextLine());
-            decorator.SalaryCalculator calc = new BaseSalaryCalculator(base);
-            Set<String> appliedComponents = new HashSet<>();
+            SalaryEnhancementPipeline pipeline = payrollService.createSalaryEnhancementPipeline(base);
             String currency = view.getCurrency();
 
             boolean adding = true;
             while (adding) {
-                System.out.println("\nCurrent Configuration: " + calc.getDescription());
-                System.out.printf("Current Calculated Salary: %s %.2f%n", currency, calc.calculateSalary());
+                System.out.println("\nCurrent Configuration: " + pipeline.getCurrentDescription());
+                System.out.printf("Current Calculated Salary: %s %.2f%n", currency, pipeline.getCurrentSalary());
                 System.out.println("\nSelect Decorator to wrap:");
-                System.out.println("1. Add HRA (+20% of base)" + (appliedComponents.contains("HRA") ? " [ALREADY APPLIED]" : ""));
-                System.out.println("2. Add Transport Allowance (+" + currency + " 1,600.00)" + (appliedComponents.contains("TRANSPORT_ALLOWANCE") ? " [ALREADY APPLIED]" : ""));
-                System.out.println("3. Add Performance Bonus (+10% of base)" + (appliedComponents.contains("PERFORMANCE_BONUS") ? " [ALREADY APPLIED]" : ""));
-                System.out.println("4. Apply Insurance Deduction (-" + currency + " 150.00)" + (appliedComponents.contains("INSURANCE_DEDUCTION") ? " [ALREADY APPLIED]" : ""));
-                System.out.println("5. Custom HRA (specify amount)" + (appliedComponents.contains("HRA") ? " [ALREADY APPLIED]" : ""));
-                System.out.println("6. Custom Transport Allowance (specify amount)" + (appliedComponents.contains("TRANSPORT_ALLOWANCE") ? " [ALREADY APPLIED]" : ""));
-                System.out.println("7. Custom Performance Bonus (specify amount)" + (appliedComponents.contains("PERFORMANCE_BONUS") ? " [ALREADY APPLIED]" : ""));
-                System.out.println("8. Custom Insurance Deduction (specify amount)" + (appliedComponents.contains("INSURANCE_DEDUCTION") ? " [ALREADY APPLIED]" : ""));
+                System.out.println("1. Add HRA (+20% of base)" + (pipeline.isApplied(DecoratorType.HRA) ? " [ALREADY APPLIED]" : ""));
+                System.out.println("2. Add Transport Allowance (+" + currency + " 1,600.00)" + (pipeline.isApplied(DecoratorType.TRANSPORT_ALLOWANCE) ? " [ALREADY APPLIED]" : ""));
+                System.out.println("3. Add Performance Bonus (+10% of base)" + (pipeline.isApplied(DecoratorType.PERFORMANCE_BONUS) ? " [ALREADY APPLIED]" : ""));
+                System.out.println("4. Apply Insurance Deduction (-" + currency + " 150.00)" + (pipeline.isApplied(DecoratorType.INSURANCE_DEDUCTION) ? " [ALREADY APPLIED]" : ""));
+                System.out.println("5. Custom HRA (specify amount)" + (pipeline.isApplied(DecoratorType.HRA) ? " [ALREADY APPLIED]" : ""));
+                System.out.println("6. Custom Transport Allowance (specify amount)" + (pipeline.isApplied(DecoratorType.TRANSPORT_ALLOWANCE) ? " [ALREADY APPLIED]" : ""));
+                System.out.println("7. Custom Performance Bonus (specify amount)" + (pipeline.isApplied(DecoratorType.PERFORMANCE_BONUS) ? " [ALREADY APPLIED]" : ""));
+                System.out.println("8. Custom Insurance Deduction (specify amount)" + (pipeline.isApplied(DecoratorType.INSURANCE_DEDUCTION) ? " [ALREADY APPLIED]" : ""));
                 System.out.println("9. Complete & View Enhanced Total");
                 System.out.print("Enter choice (1-9): ");
 
                 String subChoice = scanner.nextLine().trim();
-                switch (subChoice) {
-                    case "1" -> {
-                        if (appliedComponents.contains("HRA")) {
-                            view.displayMessage("HRA decorator is already applied! Cannot apply duplicate single-use component.");
-                            break;
+                try {
+                    switch (subChoice) {
+                        case "1" -> pipeline.applyDecorator(DecoratorType.HRA);
+                        case "2" -> pipeline.applyDecorator(DecoratorType.TRANSPORT_ALLOWANCE);
+                        case "3" -> pipeline.applyDecorator(DecoratorType.PERFORMANCE_BONUS);
+                        case "4" -> pipeline.applyDecorator(DecoratorType.INSURANCE_DEDUCTION);
+                        case "5" -> {
+                            System.out.print("Enter custom HRA amount: ");
+                            pipeline.applyDecorator(DecoratorType.HRA, parseAmount(scanner.nextLine()));
                         }
-                        calc = new HraDecorator(calc);
-                        appliedComponents.add("HRA");
+                        case "6" -> {
+                            System.out.print("Enter custom Transport Allowance amount: ");
+                            pipeline.applyDecorator(DecoratorType.TRANSPORT_ALLOWANCE, parseAmount(scanner.nextLine()));
+                        }
+                        case "7" -> {
+                            System.out.print("Enter custom Performance Bonus amount: ");
+                            pipeline.applyDecorator(DecoratorType.PERFORMANCE_BONUS, parseAmount(scanner.nextLine()));
+                        }
+                        case "8" -> {
+                            System.out.print("Enter custom Insurance Deduction amount: ");
+                            pipeline.applyDecorator(DecoratorType.INSURANCE_DEDUCTION, parseAmount(scanner.nextLine()));
+                        }
+                        case "9" -> adding = false;
+                        default -> System.out.println("Invalid selection. Please choose 1-9.");
                     }
-                    case "2" -> {
-                        if (appliedComponents.contains("TRANSPORT_ALLOWANCE")) {
-                            view.displayMessage("Transport Allowance decorator is already applied! Cannot apply duplicate single-use component.");
-                            break;
-                        }
-                        calc = new TransportAllowanceDecorator(calc);
-                        appliedComponents.add("TRANSPORT_ALLOWANCE");
-                    }
-                    case "3" -> {
-                        if (appliedComponents.contains("PERFORMANCE_BONUS")) {
-                            view.displayMessage("Performance Bonus decorator is already applied! Cannot apply duplicate single-use component.");
-                            break;
-                        }
-                        calc = new PerformanceBonusDecorator(calc);
-                        appliedComponents.add("PERFORMANCE_BONUS");
-                    }
-                    case "4" -> {
-                        if (appliedComponents.contains("INSURANCE_DEDUCTION")) {
-                            view.displayMessage("Insurance Deduction decorator is already applied! Cannot apply duplicate single-use component.");
-                            break;
-                        }
-                        try {
-                            SalaryCalculator next = new InsuranceDeductionDecorator(calc);
-                            next.calculateSalary(); // validates that deduction does not exceed accumulated salary
-                            calc = next;
-                            appliedComponents.add("INSURANCE_DEDUCTION");
-                        } catch (IllegalStateException | IllegalArgumentException ex) {
-                            view.displayMessage("Error applying Insurance Deduction: " + ex.getMessage());
-                        }
-                    }
-                    case "5" -> {
-                        if (appliedComponents.contains("HRA")) {
-                            view.displayMessage("HRA decorator is already applied! Cannot apply duplicate single-use component.");
-                            break;
-                        }
-                        System.out.print("Enter custom HRA amount: ");
-                        try {
-                            calc = new HraDecorator(calc, parseAmount(scanner.nextLine()));
-                            appliedComponents.add("HRA");
-                        } catch (IllegalArgumentException ex) {
-                            view.displayMessage("Error: " + ex.getMessage());
-                        }
-                    }
-                    case "6" -> {
-                        if (appliedComponents.contains("TRANSPORT_ALLOWANCE")) {
-                            view.displayMessage("Transport Allowance decorator is already applied! Cannot apply duplicate single-use component.");
-                            break;
-                        }
-                        System.out.print("Enter custom Transport Allowance amount: ");
-                        try {
-                            calc = new TransportAllowanceDecorator(calc, parseAmount(scanner.nextLine()));
-                            appliedComponents.add("TRANSPORT_ALLOWANCE");
-                        } catch (IllegalArgumentException ex) {
-                            view.displayMessage("Error: " + ex.getMessage());
-                        }
-                    }
-                    case "7" -> {
-                        if (appliedComponents.contains("PERFORMANCE_BONUS")) {
-                            view.displayMessage("Performance Bonus decorator is already applied! Cannot apply duplicate single-use component.");
-                            break;
-                        }
-                        System.out.print("Enter custom Performance Bonus amount: ");
-                        try {
-                            calc = new PerformanceBonusDecorator(calc, parseAmount(scanner.nextLine()));
-                            appliedComponents.add("PERFORMANCE_BONUS");
-                        } catch (IllegalArgumentException ex) {
-                            view.displayMessage("Error: " + ex.getMessage());
-                        }
-                    }
-                    case "8" -> {
-                        if (appliedComponents.contains("INSURANCE_DEDUCTION")) {
-                            view.displayMessage("Insurance Deduction decorator is already applied! Cannot apply duplicate single-use component.");
-                            break;
-                        }
-                        System.out.print("Enter custom Insurance Deduction amount: ");
-                        try {
-                            BigDecimal amt = parseAmount(scanner.nextLine());
-                            SalaryCalculator next = new InsuranceDeductionDecorator(calc, amt);
-                            next.calculateSalary(); // validates that deduction does not exceed accumulated salary
-                            calc = next;
-                            appliedComponents.add("INSURANCE_DEDUCTION");
-                        } catch (IllegalStateException | IllegalArgumentException ex) {
-                            view.displayMessage("Error applying Insurance Deduction: " + ex.getMessage());
-                        }
-                    }
-                    case "9" -> adding = false;
-                    default -> System.out.println("Invalid selection. Please choose 1-9.");
+                } catch (IllegalStateException | IllegalArgumentException ex) {
+                    view.displayMessage("Error: " + ex.getMessage());
                 }
             }
 
             System.out.println("\n==============================================");
             System.out.println("         FINAL ENHANCED SALARY SUMMARY        ");
             System.out.println("==============================================");
-            System.out.printf("Base Salary        : %s %.2f%n", currency, calc.getBaseSalary());
-            System.out.println("Decorator Pipeline : " + calc.getDescription());
-            System.out.printf("Total Enhanced Pay : %s %.2f%n", currency, calc.calculateSalary());
+            System.out.printf("Base Salary        : %s %.2f%n", currency, pipeline.getBaseSalary());
+            System.out.println("Decorator Pipeline : " + pipeline.getCurrentDescription());
+            System.out.printf("Total Enhanced Pay : %s %.2f%n", currency, pipeline.getCurrentSalary());
             System.out.println("==============================================");
 
         } catch (IllegalArgumentException | IllegalStateException e) {

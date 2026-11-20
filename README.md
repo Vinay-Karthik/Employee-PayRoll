@@ -43,7 +43,9 @@ Employee-PayRoll/
 │   │   ├── HraDecorator.java          # House Rent Allowance decorator
 │   │   ├── TransportAllowanceDecorator.java # Transport allowance decorator
 │   │   ├── PerformanceBonusDecorator.java   # Performance bonus decorator
-│   │   └── InsuranceDeductionDecorator.java # Insurance deduction decorator
+│   │   ├── InsuranceDeductionDecorator.java # Insurance deduction decorator
+│   │   ├── DecoratorType.java         # Type-safe enum for enhancement components
+│   │   └── SalaryEnhancementPipeline.java # Domain pipeline managing stacking & business rules
 │   ├── tax/                           # Tax regime families (Abstract Factory Pattern)
 │   │   ├── TaxRegime.java             # OLD vs NEW regime enum
 │   │   ├── TaxCalculator.java         # Tax component interface
@@ -87,7 +89,7 @@ Employee-PayRoll/
 
 | Pattern | Clean Package | Key Classes | Responsibility |
 | :--- | :--- | :--- | :--- |
-| **Decorator** | `decorator` | [`SalaryCalculator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/SalaryCalculator.java), [`BaseSalaryCalculator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/BaseSalaryCalculator.java), [`HraDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/HraDecorator.java), [`TransportAllowanceDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/TransportAllowanceDecorator.java), [`PerformanceBonusDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/PerformanceBonusDecorator.java), [`InsuranceDeductionDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/InsuranceDeductionDecorator.java) | Dynamically attaches allowances and deductions to base salary in arbitrary orders without altering original component. |
+| **Decorator** | `decorator` | [`SalaryCalculator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/SalaryCalculator.java), [`BaseSalaryCalculator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/BaseSalaryCalculator.java), [`HraDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/HraDecorator.java), [`TransportAllowanceDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/TransportAllowanceDecorator.java), [`PerformanceBonusDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/PerformanceBonusDecorator.java), [`InsuranceDeductionDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/InsuranceDeductionDecorator.java), [`SalaryEnhancementPipeline`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/SalaryEnhancementPipeline.java), [`DecoratorType`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/DecoratorType.java) | Dynamically attaches allowances and deductions to base salary in arbitrary orders with consistent monetary scale and single-use constraints. |
 | **Factory Method** | `calculator` | [`SalaryCalculatorFactory`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/calculator/SalaryCalculatorFactory.java), `PermanentSalaryCalculatorFactory`, etc. | Defers gross pay calculator instantiation to specialized creator subclasses per employment type. |
 | **Abstract Factory** | `tax` | [`PayrollComponentFactory`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/tax/PayrollComponentFactory.java), `OldTaxRegimeFactory`, `NewTaxRegimeFactory` | Produces matching families of tax and deduction calculators for tax regimes. |
 | **Adapter** | `integration` | [`ExternalHRAdapter`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/ExternalHRAdapter.java), [`EmployeeDirectory`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/EmployeeDirectory.java) | Converts third-party [`HRRecord`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/HRRecord.java) from [`ExternalHRService`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/ExternalHRService.java) into domain `Employee` models. |
@@ -99,21 +101,21 @@ Employee-PayRoll/
 
 ## 💡 Dynamic Salary Enhancement (Decorator Pattern)
 
-Decorators can wrap any `SalaryCalculator` in any sequence without modifying the original base calculator:
+Decorators can wrap any `SalaryCalculator` in any sequence without modifying the original base calculator. Business rules (single-use validation, deduction caps against accumulated salary) are encapsulated in [`SalaryEnhancementPipeline`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/SalaryEnhancementPipeline.java):
 
 ```java
-// 1. Base Component
-decorator.SalaryCalculator calc = new BaseSalaryCalculator(new BigDecimal("50000.00"));
+// 1. Initialize Pipeline via PayrollService
+SalaryEnhancementPipeline pipeline = payrollService.createSalaryEnhancementPipeline(new BigDecimal("50000.00"));
 
-// 2. Wrap dynamically in arbitrary combinations
-calc = new HraDecorator(calc);                             // +20% base ($10,000.00)
-calc = new TransportAllowanceDecorator(calc);              // +$1,600.00
-calc = new PerformanceBonusDecorator(calc);                // +10% base ($5,000.00)
-calc = new InsuranceDeductionDecorator(calc);              // -$150.00
+// 2. Apply decorators using type-safe enum (single-use enforced)
+pipeline.applyDecorator(DecoratorType.HRA);                    // +20% base ($10,000.00)
+pipeline.applyDecorator(DecoratorType.TRANSPORT_ALLOWANCE);    // +$1,600.00
+pipeline.applyDecorator(DecoratorType.PERFORMANCE_BONUS);      // +10% base ($5,000.00)
+pipeline.applyDecorator(DecoratorType.INSURANCE_DEDUCTION);    // -$150.00
 
-BigDecimal net = calc.calculateSalary();                   // $66,450.00
-String details = calc.getDescription();
-// "Base Salary ($50000.00) + HRA ($10000.00) + Transport Allowance ($1600.00) + Performance Bonus ($5000.00) - Insurance Deduction ($150.00)"
+BigDecimal net = pipeline.getCurrentSalary();                  // $66,450.00
+String details = pipeline.getCurrentDescription();
+// "Base Salary (50000.00) + HRA (10000.00) + Transport Allowance (1600.00) + Performance Bonus (5000.00) - Insurance Deduction (150.00)"
 ```
 
 ---

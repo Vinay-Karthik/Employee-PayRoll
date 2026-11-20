@@ -4,6 +4,7 @@ import creational.abstractfactory.DeductionCalculator;
 import creational.abstractfactory.PayrollComponentFactory;
 import creational.abstractfactory.TaxCalculator;
 import creational.builder.PayrollRequest;
+import creational.factorymethod.EmployeeType;
 import creational.factorymethod.SalaryCalculator;
 import creational.factorymethod.SalaryCalculatorFactory;
 import creational.singleton.PayrollConfig;
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Concrete implementation of PayrollService.
@@ -24,7 +26,8 @@ import java.util.Optional;
  *
  * Creational pattern integration:
  * - Singleton: PayrollConfig provides default currency & fallback financial year.
- * - Factory Method: SalaryCalculatorFactory selects the gross-pay calculator.
+ * - GoF Factory Method: SalaryCalculatorFactory defines the abstract creator whose
+ *   subclasses instantiate specific SalaryCalculator products.
  * - Abstract Factory: PayrollComponentFactory provides regime-compatible
  *   tax and deduction calculators.
  * - Builder & Prototype: Request-specific parameters (e.g. financialYear, bonusDetails)
@@ -33,17 +36,17 @@ import java.util.Optional;
 public class PayrollServiceImpl implements PayrollService {
     private final EmployeeRepository repository;
     private final ReportExporter reportExporter;
-    private final SalaryCalculatorFactory salaryCalculatorFactory;
+    private final Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver;
 
     public PayrollServiceImpl(EmployeeRepository repository, ReportExporter reportExporter) {
-        this(repository, reportExporter, new SalaryCalculatorFactory());
+        this(repository, reportExporter, SalaryCalculatorFactory::forType);
     }
 
     public PayrollServiceImpl(EmployeeRepository repository, ReportExporter reportExporter,
-                              SalaryCalculatorFactory salaryCalculatorFactory) {
+                              Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver) {
         this.repository = Objects.requireNonNull(repository, "Repository must not be null");
         this.reportExporter = Objects.requireNonNull(reportExporter, "Report exporter must not be null");
-        this.salaryCalculatorFactory = Objects.requireNonNull(salaryCalculatorFactory, "Salary calculator factory must not be null");
+        this.salaryCalculatorFactoryResolver = Objects.requireNonNull(salaryCalculatorFactoryResolver, "Factory resolver must not be null");
     }
 
     @Override
@@ -82,7 +85,8 @@ public class PayrollServiceImpl implements PayrollService {
     /**
      * Processes a PayrollRequest end-to-end:
      * 1. Uses the request's specific financial year (falling back to PayrollConfig default).
-     * 2. Factory Method -> gross pay from salary components.
+     * 2. GoF Factory Method -> concrete creator subclass instantiates the appropriate
+     *    SalaryCalculator to compute gross pay.
      * 3. Abstract Factory -> regime-compatible tax & deduction calculators.
      * 4. Optional deductions declared on the request are added on top.
      * 5. Carries descriptive bonus details into the resulting PaySlip.
@@ -91,12 +95,14 @@ public class PayrollServiceImpl implements PayrollService {
     public PaySlip processPayrollRequest(PayrollRequest request) {
         Objects.requireNonNull(request, "Payroll request must not be null");
 
-        // Issue 3: Use the request's financial year, using singleton config as fallback default
+        // Use the request's financial year, using singleton config as fallback default
         String effectiveFinancialYear = (request.getFinancialYear() != null && !request.getFinancialYear().isBlank())
                 ? request.getFinancialYear()
                 : PayrollConfig.getInstance().getFinancialYear();
 
-        SalaryCalculator salaryCalculator = salaryCalculatorFactory.createCalculator(request.getEmployeeType());
+        // GoF Factory Method: resolve concrete creator subclass and invoke factory method
+        SalaryCalculatorFactory creator = salaryCalculatorFactoryResolver.apply(request.getEmployeeType());
+        SalaryCalculator salaryCalculator = creator.createCalculator();
         BigDecimal gross = salaryCalculator.calculateGross(request.getSalaryComponents());
 
         PayrollComponentFactory componentFactory = PayrollComponentFactory.forRegime(request.getTaxRegime());
@@ -125,7 +131,7 @@ public class PayrollServiceImpl implements PayrollService {
         PayrollConfig config = PayrollConfig.getInstance();
         String currency = config.getCurrency();
 
-        // Issue 3: Derive financial year from the processed slips, falling back to singleton config
+        // Derive financial year from the processed slips, falling back to singleton config
         String reportFinancialYear = paySlips.stream()
                 .map(PaySlip::financialYear)
                 .filter(Objects::nonNull)

@@ -2,6 +2,8 @@ package ui;
 
 import creational.abstractfactory.TaxRegime;
 import creational.builder.PayrollRequest;
+import creational.factorymethod.EmployeeType;
+import creational.factorymethod.SalaryComponents;
 import creational.prototype.PayrollTemplate;
 import creational.prototype.PayrollTemplateCatalog;
 import creational.singleton.PayrollConfig;
@@ -210,11 +212,23 @@ public class PayrollCLI {
             PayrollTemplate template = templates.get(choice - 1).clone();
             view.displayMessage("Using template: " + template.getTemplateName());
 
-            // Allow customizing the clone
-            System.out.print("Enter new bonus details (Enter to keep '" + template.getBonusDetails() + "'): ");
+            // Descriptive metadata: bonus description / justification
+            System.out.print("Enter bonus description / details (Enter to keep '" + template.getBonusDetails() + "'): ");
             String bonusInput = scanner.nextLine().trim();
             if (!bonusInput.isEmpty()) {
                 template.setBonusDetails(bonusInput);
+            }
+
+            // Monetary bonus is represented as BigDecimal in SalaryComponents (not parsed from description)
+            if (template.getEmployeeType() == EmployeeType.EXECUTIVE
+                    || template.getSalaryComponents().getBonus().signum() > 0) {
+                System.out.print("Enter monetary bonus amount (Enter to keep " + template.getSalaryComponents().getBonus() + "): ");
+                String bonusAmtStr = scanner.nextLine().trim();
+                if (!bonusAmtStr.isEmpty()) {
+                    SalaryComponents comps = template.getSalaryComponents();
+                    comps.setBonus(parseAmount(bonusAmtStr));
+                    template.setSalaryComponents(comps);
+                }
             }
 
             PayrollRequest.Builder requestBuilder = new PayrollRequest.Builder()

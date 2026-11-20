@@ -16,8 +16,8 @@ import java.util.Map;
  * Can only be instantiated through {@link Builder}, which enforces
  * that all required fields are present and valid before building.
  *
- * Integrated into the application: the CLI builds PayrollRequest
- * objects which are processed by PayrollService into PaySlips.
+ * Defensive copies are maintained both on input (constructor & builder)
+ * and output (getter) to guarantee full immutability.
  */
 public final class PayrollRequest {
 
@@ -73,8 +73,12 @@ public final class PayrollRequest {
         return taxRegime;
     }
 
+    /**
+     * Returns a defensive copy of the internal SalaryComponents object
+     * to preserve class immutability.
+     */
     public SalaryComponents getSalaryComponents() {
-        return salaryComponents;
+        return new SalaryComponents(salaryComponents);
     }
 
     public Map<String, BigDecimal> getDeductions() {
@@ -155,7 +159,7 @@ public final class PayrollRequest {
         }
 
         public Builder salaryComponents(SalaryComponents salaryComponents) {
-            this.salaryComponents = salaryComponents;
+            this.salaryComponents = salaryComponents != null ? new SalaryComponents(salaryComponents) : null;
             return this;
         }
 

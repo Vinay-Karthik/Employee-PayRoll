@@ -18,6 +18,9 @@ import java.util.Objects;
  * Deep-copy semantics: cloning produces independent copies of all
  * mutable nested objects (SalaryComponents, deductions map), so
  * modifying the clone never affects the original template.
+ *
+ * Defensive copies are enforced in constructor, getter, and setter
+ * so external callers cannot mutate internal state.
  */
 public class PayrollTemplate implements Cloneable {
 
@@ -31,7 +34,7 @@ public class PayrollTemplate implements Cloneable {
                            SalaryComponents salaryComponents) {
         this.templateName = Objects.requireNonNull(templateName, "Template name must not be null");
         this.employeeType = Objects.requireNonNull(employeeType, "Employee type must not be null");
-        this.salaryComponents = Objects.requireNonNull(salaryComponents, "Salary components must not be null");
+        this.salaryComponents = new SalaryComponents(Objects.requireNonNull(salaryComponents, "Salary components must not be null"));
         this.deductions = new LinkedHashMap<>();
     }
 
@@ -61,8 +64,11 @@ public class PayrollTemplate implements Cloneable {
         return employeeType;
     }
 
+    /**
+     * Returns a defensive copy to prevent callers from mutating the template's internal state.
+     */
     public SalaryComponents getSalaryComponents() {
-        return salaryComponents;
+        return new SalaryComponents(salaryComponents);
     }
 
     public Map<String, BigDecimal> getDeductions() {
@@ -82,8 +88,13 @@ public class PayrollTemplate implements Cloneable {
         this.employeeType = Objects.requireNonNull(employeeType, "Employee type must not be null");
     }
 
+    /**
+     * Makes a defensive copy to prevent callers from modifying the template by mutating the argument.
+     */
     public void setSalaryComponents(SalaryComponents salaryComponents) {
-        this.salaryComponents = Objects.requireNonNull(salaryComponents, "Salary components must not be null");
+        this.salaryComponents = new SalaryComponents(
+                Objects.requireNonNull(salaryComponents, "Salary components must not be null")
+        );
     }
 
     public void addDeduction(String name, BigDecimal amount) {

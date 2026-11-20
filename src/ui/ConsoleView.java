@@ -53,7 +53,11 @@ public class ConsoleView {
         System.out.println("Name          : " + slip.employeeName());
         System.out.println("Department    : " + slip.department());
         System.out.println("Role Category : " + slip.roleCategory());
+        System.out.println("Financial Year: " + slip.financialYear());
         System.out.println("Bank Account  : " + slip.bankAccountNumber());
+        if (slip.bonusDetails() != null && !slip.bonusDetails().isBlank()) {
+            System.out.println("Bonus Details : " + slip.bonusDetails());
+        }
         System.out.println("----------------------------------------------");
         System.out.printf("Gross Earnings : %s %.2f\n", currency, slip.grossPay());
         System.out.printf("Tax Withholding: %s %.2f\n", currency, slip.taxWithholding());

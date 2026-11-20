@@ -23,10 +23,12 @@ import java.util.Optional;
  * Coordinates repository, domain calculations, and report generation.
  *
  * Creational pattern integration:
- * - Singleton: PayrollConfig provides currency & financial year for reports.
+ * - Singleton: PayrollConfig provides default currency & fallback financial year.
  * - Factory Method: SalaryCalculatorFactory selects the gross-pay calculator.
  * - Abstract Factory: PayrollComponentFactory provides regime-compatible
  *   tax and deduction calculators.
+ * - Builder & Prototype: Request-specific parameters (e.g. financialYear, bonusDetails)
+ *   are honored over global defaults and preserved on resulting PaySlips.
  */
 public class PayrollServiceImpl implements PayrollService {
     private final EmployeeRepository repository;
@@ -79,13 +81,20 @@ public class PayrollServiceImpl implements PayrollService {
 
     /**
      * Processes a PayrollRequest end-to-end:
-     * 1. Factory Method -> gross pay from salary components.
-     * 2. Abstract Factory -> regime-compatible tax & deduction calculators.
-     * 3. Optional deductions declared on the request are added on top.
+     * 1. Uses the request's specific financial year (falling back to PayrollConfig default).
+     * 2. Factory Method -> gross pay from salary components.
+     * 3. Abstract Factory -> regime-compatible tax & deduction calculators.
+     * 4. Optional deductions declared on the request are added on top.
+     * 5. Carries descriptive bonus details into the resulting PaySlip.
      */
     @Override
     public PaySlip processPayrollRequest(PayrollRequest request) {
         Objects.requireNonNull(request, "Payroll request must not be null");
+
+        // Issue 3: Use the request's financial year, using singleton config as fallback default
+        String effectiveFinancialYear = (request.getFinancialYear() != null && !request.getFinancialYear().isBlank())
+                ? request.getFinancialYear()
+                : PayrollConfig.getInstance().getFinancialYear();
 
         SalaryCalculator salaryCalculator = salaryCalculatorFactory.createCalculator(request.getEmployeeType());
         BigDecimal gross = salaryCalculator.calculateGross(request.getSalaryComponents());
@@ -105,7 +114,9 @@ public class PayrollServiceImpl implements PayrollService {
                 request.getDepartment(),
                 request.getEmployeeType().name(),
                 request.getBankAccountNumber(),
-                gross, tax, deductions, net
+                gross, tax, deductions, net,
+                effectiveFinancialYear,
+                request.getBonusDetails()
         );
     }
 
@@ -114,19 +125,28 @@ public class PayrollServiceImpl implements PayrollService {
         PayrollConfig config = PayrollConfig.getInstance();
         String currency = config.getCurrency();
 
+        // Issue 3: Derive financial year from the processed slips, falling back to singleton config
+        String reportFinancialYear = paySlips.stream()
+                .map(PaySlip::financialYear)
+                .filter(Objects::nonNull)
+                .filter(s -> !s.isBlank())
+                .distinct()
+                .reduce((a, b) -> a + ", " + b)
+                .orElse(config.getFinancialYear());
+
         BigDecimal totalGross = BigDecimal.ZERO;
         BigDecimal totalTax = BigDecimal.ZERO;
         BigDecimal totalDeductions = BigDecimal.ZERO;
         BigDecimal totalNet = BigDecimal.ZERO;
 
         StringBuilder sb = new StringBuilder();
-        sb.append("========================================================================================\n");
+        sb.append("========================================================================================================\n");
         sb.append(String.format("               PAYROLL SUMMARY REPORT - %s (%s)               \n",
-                config.getFinancialYear(), currency));
-        sb.append("========================================================================================\n");
-        sb.append(String.format("%-5s | %-16s | %-22s | %-12s | %-12s | %-12s | %-12s\n",
-                "ID", "Name", "Role Category", "Gross", "Tax", "Deduction", "Net Pay"));
-        sb.append("----------------------------------------------------------------------------------------\n");
+                reportFinancialYear, currency));
+        sb.append("========================================================================================================\n");
+        sb.append(String.format("%-5s | %-16s | %-18s | %-10s | %-12s | %-12s | %-12s | %-12s\n",
+                "ID", "Name", "Role Category", "FY", "Gross", "Tax", "Deduction", "Net Pay"));
+        sb.append("--------------------------------------------------------------------------------------------------------\n");
 
         for (PaySlip slip : paySlips) {
             totalGross = totalGross.add(slip.grossPay());
@@ -134,16 +154,16 @@ public class PayrollServiceImpl implements PayrollService {
             totalDeductions = totalDeductions.add(slip.deductions());
             totalNet = totalNet.add(slip.netPay());
 
-            sb.append(String.format("%-5d | %-16s | %-22s | %s %-10.2f | %s %-10.2f | %s %-10.2f | %s %-10.2f\n",
-                    slip.employeeId(), slip.employeeName(), slip.roleCategory(),
+            sb.append(String.format("%-5d | %-16s | %-18s | %-10s | %s %-9.2f | %s %-9.2f | %s %-9.2f | %s %-9.2f\n",
+                    slip.employeeId(), slip.employeeName(), slip.roleCategory(), slip.financialYear(),
                     currency, slip.grossPay(), currency, slip.taxWithholding(),
                     currency, slip.deductions(), currency, slip.netPay()));
         }
 
-        sb.append("========================================================================================\n");
+        sb.append("========================================================================================================\n");
         sb.append(String.format("TOTALS: Gross: %s %.2f | Tax: %s %.2f | Deductions: %s %.2f | Total Disbursed: %s %.2f\n",
                 currency, totalGross, currency, totalTax, currency, totalDeductions, currency, totalNet));
-        sb.append("========================================================================================\n");
+        sb.append("========================================================================================================\n");
 
         return sb.toString();
     }

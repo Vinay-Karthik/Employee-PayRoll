@@ -1,87 +1,124 @@
-# Payroll Application (Refactored with SOLID Principles)
+# Enterprise Payroll Application
 
-A modular, clean, and maintainable Java payroll system refactored from an initial legacy monolithic codebase by strictly adhering to the **SOLID** design principles.
+A modular, clean, and maintainable Java payroll system adhering strictly to **SOLID design principles** and **Enterprise Java package naming conventions**.
 
 ---
 
 ## 🏗️ Architecture & Package Structure
 
+Packages are organized by **business domain and architectural responsibility** rather than pattern names:
+
 ```
 Employee-PayRoll/
 ├── src/
-│   ├── model/
-│   │   ├── Employee.java              # Abstract base domain model (Template Method for PaySlip)
-│   │   ├── FullTimeEmployee.java      # Concrete employee: base salary + bonus + high-earner surtax
-│   │   ├── PartTimeEmployee.java      # Concrete employee: hourly rate + overtime policy
-│   │   ├── ContractorEmployee.java    # Concrete employee: flat billable rate + service withholding
-│   │   ├── InternEmployee.java        # Concrete employee: fixed stipend + tax exempt threshold
-│   │   └── PaySlip.java               # Immutable Value Object / DTO for calculation results
-│   ├── repository/
-│   │   ├── EmployeeRepository.java    # Interface for persistence abstraction (ISP / DIP)
-│   │   └── CsvEmployeeRepository.java # Concrete CSV storage with try-with-resources
-│   ├── service/
-│   │   ├── PayrollService.java        # Interface for business operations
-│   │   └── PayrollServiceImpl.java    # Coordinates domain models, persistence, and reporting
-│   ├── report/
-│   │   ├── ReportExporter.java        # Interface for output generation
-│   │   └── FileReportExporter.java    # Concrete filesystem exporter
-│   ├── ui/
-│   │   ├── ConsoleView.java           # Presentation layer (table rendering, payslip formatting)
-│   │   └── PayrollCLI.java            # Controller handling user interactions and input parsing
-│   └── PayrollSystem.java             # Composition Root: wires dependencies together (DI)
-├── employees.csv                      # Persistent storage
+│   ├── config/                        # System configuration & environment settings
+│   │   └── PayrollConfig.java         # Singleton configuration provider (currency, FY, regime)
+│   ├── model/                         # Domain entities, value objects & request models
+│   │   ├── Employee.java              # Abstract base domain employee
+│   │   ├── FullTimeEmployee.java      # Salaried full-time employee
+│   │   ├── PartTimeEmployee.java      # Hourly part-time employee with overtime rules
+│   │   ├── ContractorEmployee.java    # Billed contractor with service fee withholding
+│   │   ├── InternEmployee.java        # Intern with stipend tax exemption limits
+│   │   ├── EmployeeType.java          # Employment structure categories enum
+│   │   ├── SalaryComponents.java      # Monetary salary components (with copy constructor)
+│   │   ├── PaySlip.java               # Immutable record DTO for calculation results
+│   │   ├── PayrollRequest.java        # Builder-constructed immutable payroll run request
+│   │   ├── PayrollTemplate.java       # Prototype-clonable reusable configuration
+│   │   └── PayrollTemplateCatalog.java# Predefined template catalog
+│   ├── calculator/                    # Salary calculation engines (Factory Method Pattern)
+│   │   ├── SalaryCalculator.java      # Product interface for gross pay calculation
+│   │   ├── SalaryCalculatorFactory.java# GoF Abstract Creator contract
+│   │   ├── PermanentSalaryCalculator.java
+│   │   ├── PermanentSalaryCalculatorFactory.java
+│   │   ├── ContractSalaryCalculator.java
+│   │   ├── ContractSalaryCalculatorFactory.java
+│   │   ├── SalesSalaryCalculator.java
+│   │   ├── SalesSalaryCalculatorFactory.java
+│   │   ├── ExecutiveSalaryCalculator.java
+│   │   └── ExecutiveSalaryCalculatorFactory.java
+│   ├── decorator/                     # Dynamic salary enhancement (Decorator Pattern)
+│   │   ├── SalaryCalculator.java      # Component interface
+│   │   ├── BaseSalaryCalculator.java  # Concrete component
+│   │   ├── SalaryDecorator.java      # Abstract base decorator
+│   │   ├── HraDecorator.java          # House Rent Allowance decorator
+│   │   ├── TransportAllowanceDecorator.java # Transport allowance decorator
+│   │   ├── PerformanceBonusDecorator.java   # Performance bonus decorator
+│   │   └── InsuranceDeductionDecorator.java # Insurance deduction decorator
+│   ├── tax/                           # Tax regime families (Abstract Factory Pattern)
+│   │   ├── TaxRegime.java             # OLD vs NEW regime enum
+│   │   ├── TaxCalculator.java         # Tax component interface
+│   │   ├── DeductionCalculator.java   # Deduction component interface
+│   │   ├── PayrollComponentFactory.java# Abstract Factory for tax/deduction families
+│   │   ├── OldTaxRegimeFactory.java   # Concrete factory for Old Regime
+│   │   ├── OldTaxCalculator.java
+│   │   ├── OldDeductionCalculator.java
+│   │   ├── NewTaxRegimeFactory.java   # Concrete factory for New Regime
+│   │   ├── NewTaxCalculator.java
+│   │   └── NewDeductionCalculator.java
+│   ├── integration/                   # External systems integration (Adapter Pattern)
+│   │   ├── EmployeeDirectory.java     # Target interface for employee discovery/persistence
+│   │   ├── RepositoryEmployeeDirectory.java # Alternate implementation backed by local repository
+│   │   ├── ExternalHRAdapter.java     # Adapter converting external records into domain models
+│   │   ├── ExternalHRService.java     # Third-party HR API simulation (Adaptee)
+│   │   ├── HRRecord.java              # External DTO
+│   │   ├── ExternalEmployeeNotFoundException.java
+│   │   ├── ExternalServiceException.java
+│   │   └── EmployeeDirectoryException.java
+│   ├── repository/                    # Persistence abstractions & in-memory stores
+│   │   ├── EmployeeRepository.java
+│   │   └── InMemoryEmployeeRepository.java
+│   ├── service/                       # Core payroll business workflow services
+│   │   ├── PayrollService.java
+│   │   └── PayrollServiceImpl.java
+│   ├── report/                        # Report generation & file export
+│   │   ├── ReportExporter.java
+│   │   └── FileReportExporter.java
+│   ├── ui/                            # Presentation layer & CLI controllers
+│   │   ├── ConsoleView.java
+│   │   └── PayrollCLI.java
+│   └── PayrollSystem.java             # Composition Root: Dependency Injection entry point
 ├── payroll_summary_report.txt         # Exported report artifact
 └── out/                               # Compiled bytecode
 ```
 
 ---
 
-## 🔍 Problems Identified in the Initial Codebase
+## 🎨 Design Patterns in the Clean Architecture
 
-| Problem | Symptoms in Legacy Code | Affected Principle |
-| :--- | :--- | :--- |
-| **God Class** | `PayrollSystem` handled CSV persistence, salary rules, tax formulas, CLI menu, and payslip formatting. | **S** (Single Responsibility) |
-| **Shotgun Surgery** | Adding a new employee role required altering 5 separate switch statements across multiple methods. | **O** (Open-Closed) |
-| **Primitive Obsession** | Used raw integer codes (`1, 2, 3, 4`) for employee roles instead of polymorphic behavior. | **O** / **L** |
-| **DRY Violations** | Gross pay, tax calculations, and benefits were copy-pasted in 3 different methods. | Maintainability |
-| **Tight Coupling** | High-level logic directly called `new FileWriter("employees.csv")` and `System.out.println`. | **D** (Dependency Inversion) |
-| **No Abstraction** | No interfaces existed; unit testing was blocked by static global collections. | **I** / **D** |
-
----
-
-## 🛡️ How SOLID Principles Were Applied
-
-### 1. Single Responsibility Principle (SRP)
-- **Model**: [`Employee`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/Employee.java) and its subclasses only manage employee state and calculation rules.
-- **Repository**: [`CsvEmployeeRepository`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/repository/CsvEmployeeRepository.java) only manages reading/writing records from CSV.
-- **Service**: [`PayrollServiceImpl`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/service/PayrollServiceImpl.java) only orchestrates domain operations and aggregates payroll summaries.
-- **View**: [`ConsoleView`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/ui/ConsoleView.java) only handles formatting and rendering output.
-- **Controller**: [`PayrollCLI`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/ui/PayrollCLI.java) only handles user input validation and menu flow.
-- **Root**: [`PayrollSystem`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/PayrollSystem.java) only acts as the composition root for dependency injection.
-
-### 2. Open-Closed Principle (OCP)
-- Replaced all switch statements with **polymorphism**.
-- To add a new role (e.g., `CommissionEmployee`), create a new class extending `Employee` and implement its specific `calculateGrossPay()`, `calculateTax()`, and `calculateDeductions()`.
-- Existing classes (`PayrollServiceImpl`, `CsvEmployeeRepository`, `PaySlip`) remain closed for modification.
-
-### 3. Liskov Substitution Principle (LSP)
-- All employee subtypes ([`FullTimeEmployee`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/FullTimeEmployee.java), [`PartTimeEmployee`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/PartTimeEmployee.java), [`ContractorEmployee`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/ContractorEmployee.java), [`InternEmployee`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/InternEmployee.java)) can be substituted wherever `Employee` is expected without runtime exceptions or type-checking (`instanceof`).
-
-### 4. Interface Segregation Principle (ISP)
-- Small, focused interfaces are created instead of one bloated interface:
-  - [`EmployeeRepository`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/repository/EmployeeRepository.java)
-  - [`PayrollService`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/service/PayrollService.java)
-  - [`ReportExporter`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/report/ReportExporter.java)
-
-### 5. Dependency Inversion Principle (DIP)
-- High-level modules depend on abstractions (interfaces), not concrete implementations:
-  - `PayrollServiceImpl` depends on `EmployeeRepository` and `ReportExporter`.
-  - `PayrollCLI` depends on `PayrollService`.
-- Concrete implementations are instantiated and injected in [`PayrollSystem.java`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/PayrollSystem.java).
+| Pattern | Clean Package | Key Classes | Responsibility |
+| :--- | :--- | :--- | :--- |
+| **Decorator** | `decorator` | [`SalaryCalculator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/SalaryCalculator.java), [`BaseSalaryCalculator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/BaseSalaryCalculator.java), [`HraDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/HraDecorator.java), [`TransportAllowanceDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/TransportAllowanceDecorator.java), [`PerformanceBonusDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/PerformanceBonusDecorator.java), [`InsuranceDeductionDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/InsuranceDeductionDecorator.java) | Dynamically attaches allowances and deductions to base salary in arbitrary orders without altering original component. |
+| **Factory Method** | `calculator` | [`SalaryCalculatorFactory`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/calculator/SalaryCalculatorFactory.java), `PermanentSalaryCalculatorFactory`, etc. | Defers gross pay calculator instantiation to specialized creator subclasses per employment type. |
+| **Abstract Factory** | `tax` | [`PayrollComponentFactory`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/tax/PayrollComponentFactory.java), `OldTaxRegimeFactory`, `NewTaxRegimeFactory` | Produces matching families of tax and deduction calculators for tax regimes. |
+| **Adapter** | `integration` | [`ExternalHRAdapter`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/ExternalHRAdapter.java), [`EmployeeDirectory`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/EmployeeDirectory.java) | Converts third-party [`HRRecord`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/HRRecord.java) from [`ExternalHRService`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/ExternalHRService.java) into domain `Employee` models. |
+| **Builder** | `model` | [`PayrollRequest.Builder`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/PayrollRequest.java) | Validates and constructs immutable, defensive-copied payroll calculation requests. |
+| **Prototype** | `model` | [`PayrollTemplate`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/PayrollTemplate.java), [`PayrollTemplateCatalog`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/PayrollTemplateCatalog.java) | Deep-copies reusable payroll configurations that can be customized per employee. |
+| **Singleton** | `config` | [`PayrollConfig`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/config/PayrollConfig.java) | Thread-safe enum singleton providing global default currency, FY, and tax regime. |
 
 ---
 
-## 🚀 Running the Refactored Application
+## 💡 Dynamic Salary Enhancement (Decorator Pattern)
+
+Decorators can wrap any `SalaryCalculator` in any sequence without modifying the original base calculator:
+
+```java
+// 1. Base Component
+decorator.SalaryCalculator calc = new BaseSalaryCalculator(new BigDecimal("50000.00"));
+
+// 2. Wrap dynamically in arbitrary combinations
+calc = new HraDecorator(calc);                             // +20% base ($10,000.00)
+calc = new TransportAllowanceDecorator(calc);              // +$1,600.00
+calc = new PerformanceBonusDecorator(calc);                // +10% base ($5,000.00)
+calc = new InsuranceDeductionDecorator(calc);              // -$150.00
+
+BigDecimal net = calc.calculateSalary();                   // $66,450.00
+String details = calc.getDescription();
+// "Base Salary ($50000.00) + HRA ($10000.00) + Transport Allowance ($1600.00) + Performance Bonus ($5000.00) - Insurance Deduction ($150.00)"
+```
+
+---
+
+## 🚀 Running the Application
 
 ```bash
 # Compile

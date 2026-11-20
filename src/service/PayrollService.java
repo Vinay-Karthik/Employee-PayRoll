@@ -1,8 +1,8 @@
 package service;
 
-import creational.builder.PayrollRequest;
 import model.Employee;
 import model.PaySlip;
+import model.PayrollRequest;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,8 +22,6 @@ public interface PayrollService {
 
     /**
      * Processes a PayrollRequest built via the Builder pattern.
-     * Uses the Factory Method (salary calculator) and Abstract Factory
-     * (tax regime components) creational patterns internally.
      */
     PaySlip processPayrollRequest(PayrollRequest request);
 

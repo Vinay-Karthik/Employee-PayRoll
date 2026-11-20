@@ -1,19 +1,19 @@
 package service;
 
-import creational.abstractfactory.DeductionCalculator;
-import creational.abstractfactory.PayrollComponentFactory;
-import creational.abstractfactory.TaxCalculator;
-import creational.builder.PayrollRequest;
-import creational.factorymethod.EmployeeType;
-import creational.factorymethod.SalaryCalculator;
-import creational.factorymethod.SalaryCalculatorFactory;
-import creational.singleton.PayrollConfig;
+import calculator.SalaryCalculator;
+import calculator.SalaryCalculatorFactory;
+import config.PayrollConfig;
+import integration.EmployeeDirectory;
+import integration.RepositoryEmployeeDirectory;
 import model.Employee;
+import model.EmployeeType;
 import model.PaySlip;
+import model.PayrollRequest;
 import report.ReportExporter;
 import repository.EmployeeRepository;
-import structural.adapter.EmployeeDirectory;
-import structural.adapter.RepositoryEmployeeDirectory;
+import tax.DeductionCalculator;
+import tax.PayrollComponentFactory;
+import tax.TaxCalculator;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -25,18 +25,6 @@ import java.util.function.Function;
 /**
  * Concrete implementation of PayrollService.
  * Coordinates employee directory, domain calculations, and report generation.
- *
- * Design Pattern Integration:
- * - Structural Adapter: EmployeeDirectory interface decouples payroll processing from
- *   the underlying employee data source (e.g. ExternalHRAdapter vs RepositoryEmployeeDirectory).
- * - Read/Write Consistency: All employee lifecycle operations (retrieval, registration, removal)
- *   are handled consistently through the EmployeeDirectory, maintaining data synchronization.
- * - Singleton: PayrollConfig provides default currency & fallback financial year.
- * - GoF Factory Method: SalaryCalculatorFactory defines the abstract creator whose
- *   subclasses instantiate specific SalaryCalculator products.
- * - Abstract Factory: PayrollComponentFactory provides regime-compatible
- *   tax and deduction calculators.
- * - Builder & Prototype: Request-specific parameters are honored and preserved on PaySlips.
  */
 public class PayrollServiceImpl implements PayrollService {
     private final EmployeeDirectory employeeDirectory;
@@ -86,10 +74,6 @@ public class PayrollServiceImpl implements PayrollService {
         return employeeDirectory.findEmployeeById(id);
     }
 
-    /**
-     * Registers an employee consistently into the employee directory,
-     * maintaining synchronization with the repository.
-     */
     @Override
     public void registerEmployee(Employee employee) {
         Objects.requireNonNull(employee, "Employee cannot be null");
@@ -99,9 +83,6 @@ public class PayrollServiceImpl implements PayrollService {
         }
     }
 
-    /**
-     * Removes an employee consistently from the employee directory and repository.
-     */
     @Override
     public boolean removeEmployee(int id) {
         boolean removedFromDirectory = employeeDirectory.deleteEmployee(id);
@@ -121,25 +102,14 @@ public class PayrollServiceImpl implements PayrollService {
                 .toList();
     }
 
-    /**
-     * Processes a PayrollRequest end-to-end:
-     * 1. Uses the request's specific financial year (falling back to PayrollConfig default).
-     * 2. GoF Factory Method -> concrete creator subclass instantiates the appropriate
-     *    SalaryCalculator to compute gross pay.
-     * 3. Abstract Factory -> regime-compatible tax & deduction calculators.
-     * 4. Optional deductions declared on the request are added on top.
-     * 5. Carries descriptive bonus details into the resulting PaySlip.
-     */
     @Override
     public PaySlip processPayrollRequest(PayrollRequest request) {
         Objects.requireNonNull(request, "Payroll request must not be null");
 
-        // Use the request's financial year, using singleton config as fallback default
         String effectiveFinancialYear = (request.getFinancialYear() != null && !request.getFinancialYear().isBlank())
                 ? request.getFinancialYear()
                 : PayrollConfig.getInstance().getFinancialYear();
 
-        // GoF Factory Method: resolve concrete creator subclass and invoke factory method
         SalaryCalculatorFactory creator = salaryCalculatorFactoryResolver.apply(request.getEmployeeType());
         SalaryCalculator salaryCalculator = creator.createCalculator();
         BigDecimal gross = salaryCalculator.calculateGross(request.getSalaryComponents());
@@ -170,7 +140,6 @@ public class PayrollServiceImpl implements PayrollService {
         PayrollConfig config = PayrollConfig.getInstance();
         String currency = config.getCurrency();
 
-        // Derive financial year from the processed slips, falling back to singleton config
         String reportFinancialYear = paySlips.stream()
                 .map(PaySlip::financialYear)
                 .filter(Objects::nonNull)

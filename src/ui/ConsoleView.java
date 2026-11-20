@@ -1,6 +1,6 @@
 package ui;
 
-import creational.singleton.PayrollConfig;
+import config.PayrollConfig;
 import model.Employee;
 import model.PaySlip;
 
@@ -13,6 +13,10 @@ import java.util.List;
 public class ConsoleView {
 
     private final String currency = PayrollConfig.getInstance().getCurrency();
+
+    public String getCurrency() {
+        return currency;
+    }
 
     public void displayWelcome() {
         System.out.println("==================================================");
@@ -28,8 +32,9 @@ public class ConsoleView {
         System.out.println("4. Process & export full payroll report");
         System.out.println("5. Delete an employee");
         System.out.println("6. Quick payroll via template & request (Builder/Prototype)");
-        System.out.println("7. Exit");
-        System.out.print("Enter choice (1-7): ");
+        System.out.println("7. Dynamic salary enhancement (Decorator Pattern)");
+        System.out.println("8. Exit");
+        System.out.print("Enter choice (1-8): ");
     }
 
     public void displayEmployees(List<Employee> employees) {

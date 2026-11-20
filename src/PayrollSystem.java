@@ -1,14 +1,13 @@
-import creational.factorymethod.SalaryCalculatorFactory;
+import calculator.SalaryCalculatorFactory;
+import integration.EmployeeDirectory;
+import integration.ExternalHRAdapter;
+import integration.ExternalHRService;
 import report.FileReportExporter;
 import report.ReportExporter;
 import repository.EmployeeRepository;
 import repository.InMemoryEmployeeRepository;
 import service.PayrollService;
 import service.PayrollServiceImpl;
-import structural.adapter.EmployeeDirectory;
-import structural.adapter.ExternalHRAdapter;
-import structural.adapter.ExternalHRService;
-import structural.adapter.RepositoryEmployeeDirectory;
 import ui.ConsoleView;
 import ui.PayrollCLI;
 
@@ -17,12 +16,14 @@ import java.util.Scanner;
 /**
  * Application Entry Point / Composition Root.
  *
- * Demonstrates:
- * - Structural Adapter Pattern: ExternalHRAdapter adapts third-party ExternalHRService
- *   to the EmployeeDirectory target interface, which is injected into PayrollServiceImpl.
- * - Pluggability: PayrollServiceImpl can seamlessly switch between ExternalHRAdapter
- *   and RepositoryEmployeeDirectory with ZERO changes to the payroll service.
- * - GoF Creational Patterns: Factory Method, Abstract Factory, Builder, Prototype, Singleton.
+ * Professional Architecture & Design Patterns:
+ * - Adapter Pattern (integration): ExternalHRAdapter adapts third-party ExternalHRService
+ *   to the EmployeeDirectory target interface, injected into PayrollServiceImpl.
+ * - Factory Method Pattern (calculator): SalaryCalculatorFactory creators for salary calculation.
+ * - Abstract Factory Pattern (tax): Regime-based tax and deduction component creation.
+ * - Builder Pattern (model): Validated immutable PayrollRequest construction.
+ * - Prototype Pattern (model): Deep-copied customizable payroll templates.
+ * - Singleton Pattern (config): Shared configuration provider.
  */
 public class PayrollSystem {
     private static final String DEFAULT_REPORT_FILE = "payroll_summary_report.txt";

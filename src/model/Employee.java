@@ -5,7 +5,6 @@ import java.util.Objects;
 
 /**
  * Abstract Base Class for all Employees.
- *
  * Adheres to:
  * - Single Responsibility Principle (SRP): Encapsulates core employee profile state & contracts.
  * - Open-Closed Principle (OCP): New employee categories extend this class without modifying existing code.

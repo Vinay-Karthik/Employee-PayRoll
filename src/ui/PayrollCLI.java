@@ -1,14 +1,10 @@
 package ui;
 
-import creational.abstractfactory.TaxRegime;
-import creational.builder.PayrollRequest;
-import creational.factorymethod.EmployeeType;
-import creational.factorymethod.SalaryComponents;
-import creational.prototype.PayrollTemplate;
-import creational.prototype.PayrollTemplateCatalog;
-import creational.singleton.PayrollConfig;
+import config.PayrollConfig;
+import decorator.*;
 import model.*;
 import service.PayrollService;
+import tax.TaxRegime;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -46,7 +42,7 @@ public class PayrollCLI {
             try {
                 choice = Integer.parseInt(input);
             } catch (NumberFormatException e) {
-                view.displayMessage("Invalid input! Please enter a number between 1 and 7.");
+                view.displayMessage("Invalid input! Please enter a number between 1 and 8.");
                 continue;
             }
 
@@ -57,11 +53,12 @@ public class PayrollCLI {
                 case 4 -> handleFullPayroll();
                 case 5 -> handleDeleteEmployee();
                 case 6 -> handleTemplatePayrollRequest();
-                case 7 -> {
+                case 7 -> handleDynamicSalaryEnhancement();
+                case 8 -> {
                     running = false;
                     view.displayMessage("Exiting Payroll Application. Goodbye!");
                 }
-                default -> view.displayMessage("Invalid selection. Please choose an option from 1 to 7.");
+                default -> view.displayMessage("Invalid selection. Please choose an option from 1 to 8.");
             }
         }
     }
@@ -276,6 +273,73 @@ public class PayrollCLI {
             view.displayMessage("Input error: Please enter valid numeric values.");
         } catch (IllegalArgumentException | IllegalStateException e) {
             view.displayMessage("Validation error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Demonstrates dynamic runtime composition using the Decorator Pattern.
+     * Allows combining HRA, Transport Allowance, Performance Bonus, and Insurance Deductions.
+     */
+    private void handleDynamicSalaryEnhancement() {
+        view.displayMessage("\n=== Dynamic Salary Enhancement (Decorator Pattern) ===");
+        try {
+            System.out.print("Enter Base Salary: ");
+            BigDecimal base = parseAmount(scanner.nextLine());
+            decorator.SalaryCalculator calc = new BaseSalaryCalculator(base);
+
+            boolean adding = true;
+            while (adding) {
+                System.out.println("\nCurrent Configuration: " + calc.getDescription());
+                System.out.printf("Current Calculated Salary: %s %.2f%n", view.getCurrency(), calc.calculateSalary());
+                System.out.println("\nSelect Decorator to wrap:");
+                System.out.println("1. Add HRA (+20% of base)");
+                System.out.println("2. Add Transport Allowance (+$1,600.00)");
+                System.out.println("3. Add Performance Bonus (+10% of base)");
+                System.out.println("4. Apply Insurance Deduction (-$150.00)");
+                System.out.println("5. Custom HRA (specify amount)");
+                System.out.println("6. Custom Transport Allowance (specify amount)");
+                System.out.println("7. Custom Performance Bonus (specify amount)");
+                System.out.println("8. Custom Insurance Deduction (specify amount)");
+                System.out.println("9. Complete & View Enhanced Total");
+                System.out.print("Enter choice (1-9): ");
+
+                String subChoice = scanner.nextLine().trim();
+                switch (subChoice) {
+                    case "1" -> calc = new HraDecorator(calc);
+                    case "2" -> calc = new TransportAllowanceDecorator(calc);
+                    case "3" -> calc = new PerformanceBonusDecorator(calc);
+                    case "4" -> calc = new InsuranceDeductionDecorator(calc);
+                    case "5" -> {
+                        System.out.print("Enter custom HRA amount: ");
+                        calc = new HraDecorator(calc, parseAmount(scanner.nextLine()));
+                    }
+                    case "6" -> {
+                        System.out.print("Enter custom Transport Allowance amount: ");
+                        calc = new TransportAllowanceDecorator(calc, parseAmount(scanner.nextLine()));
+                    }
+                    case "7" -> {
+                        System.out.print("Enter custom Performance Bonus amount: ");
+                        calc = new PerformanceBonusDecorator(calc, parseAmount(scanner.nextLine()));
+                    }
+                    case "8" -> {
+                        System.out.print("Enter custom Insurance Deduction amount: ");
+                        calc = new InsuranceDeductionDecorator(calc, parseAmount(scanner.nextLine()));
+                    }
+                    case "9" -> adding = false;
+                    default -> System.out.println("Invalid selection. Please choose 1-9.");
+                }
+            }
+
+            System.out.println("\n==============================================");
+            System.out.println("         FINAL ENHANCED SALARY SUMMARY        ");
+            System.out.println("==============================================");
+            System.out.printf("Base Salary        : %s %.2f%n", view.getCurrency(), calc.getBaseSalary());
+            System.out.println("Decorator Pipeline : " + calc.getDescription());
+            System.out.printf("Total Enhanced Pay : %s %.2f%n", view.getCurrency(), calc.calculateSalary());
+            System.out.println("==============================================");
+
+        } catch (IllegalArgumentException e) {
+            view.displayMessage("Error: " + e.getMessage());
         }
     }
 

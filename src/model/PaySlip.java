@@ -1,6 +1,6 @@
 package model;
 
-import creational.singleton.PayrollConfig;
+import config.PayrollConfig;
 
 import java.math.BigDecimal;
 

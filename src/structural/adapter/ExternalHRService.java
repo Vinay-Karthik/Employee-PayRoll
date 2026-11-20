@@ -7,11 +7,15 @@ import java.util.*;
  * Adaptee (GoF Adapter Pattern).
  * Simulates a legacy / third-party External HR API (e.g. Workday, BambooHR).
  *
- * Exposes external data structures (HRRecord) with proprietary identifier
- * formatting, statuses, and field mappings.
+ * Contract Guarantees:
+ * - {@link #getEmployeeById(String)} guarantees returning a non-null, active {@link HRRecord}
+ *   when successful. It throws {@link ExternalEmployeeNotFoundException} if the record does
+ *   not exist or is marked inactive.
+ * - Throws {@link ExternalServiceException} if an infrastructure or network failure occurs.
  */
 public class ExternalHRService {
     private final Map<String, HRRecord> externalDatabase = new LinkedHashMap<>();
+    private boolean simulateFailure = false;
 
     public ExternalHRService() {
         seedExternalEmployees();
@@ -72,13 +76,24 @@ public class ExternalHRService {
     }
 
     /**
+     * Enables or disables simulated infrastructure / network failures.
+     */
+    public void setSimulateFailure(boolean simulateFailure) {
+        this.simulateFailure = simulateFailure;
+    }
+
+    /**
      * Simulates fetching an external employee record by external identifier.
      *
      * @param externalId the external ID string (e.g. "HR-101")
-     * @return the external HRRecord
+     * @return non-null, active HRRecord
      * @throws ExternalEmployeeNotFoundException if record is not found or inactive
+     * @throws ExternalServiceException if a network or infrastructure error occurs
      */
-    public HRRecord getEmployeeById(String externalId) throws ExternalEmployeeNotFoundException {
+    public HRRecord getEmployeeById(String externalId) throws ExternalEmployeeNotFoundException, ExternalServiceException {
+        if (simulateFailure) {
+            throw new ExternalServiceException("External HR API connection timed out while querying ID: " + externalId);
+        }
         if (externalId == null || !externalDatabase.containsKey(externalId)) {
             throw new ExternalEmployeeNotFoundException("No employee found in external HR with ID: " + externalId);
         }
@@ -90,16 +105,36 @@ public class ExternalHRService {
     }
 
     /**
-     * Simulates fetching all active external records from the third-party system.
+     * Simulates fetching all records from the third-party system.
+     *
+     * @return non-null list of all HRRecords
+     * @throws ExternalServiceException if a network or infrastructure error occurs
      */
-    public List<HRRecord> getAllEmployees() {
+    public List<HRRecord> getAllEmployees() throws ExternalServiceException {
+        if (simulateFailure) {
+            throw new ExternalServiceException("External HR API connection timed out while fetching employee list");
+        }
         return new ArrayList<>(externalDatabase.values());
     }
 
     /**
-     * Allows adding a record to the external HR system simulation.
+     * Allows adding or updating a record in the simulated external HR database.
+     * Validates non-null values and ID format.
      */
     public void saveExternalRecord(HRRecord record) {
+        Objects.requireNonNull(record, "HR record cannot be null");
+        Objects.requireNonNull(record.externalId(), "External ID cannot be null");
+        if (!record.externalId().matches("^HR-[1-9]\\d*$")) {
+            throw new IllegalArgumentException("Invalid external ID format for HR record: " + record.externalId());
+        }
         externalDatabase.put(record.externalId(), record);
+    }
+
+    /**
+     * Deletes a record from the external database.
+     */
+    public boolean deleteExternalRecord(String externalId) {
+        Objects.requireNonNull(externalId, "External ID cannot be null");
+        return externalDatabase.remove(externalId) != null;
     }
 }

@@ -29,6 +29,8 @@ import java.util.function.Function;
  * Design Pattern Integration:
  * - Structural Adapter: EmployeeDirectory interface decouples payroll processing from
  *   the underlying employee data source (e.g. ExternalHRAdapter vs RepositoryEmployeeDirectory).
+ * - Read/Write Consistency: All employee lifecycle operations (retrieval, registration, removal)
+ *   are handled consistently through the EmployeeDirectory, maintaining data synchronization.
  * - Singleton: PayrollConfig provides default currency & fallback financial year.
  * - GoF Factory Method: SalaryCalculatorFactory defines the abstract creator whose
  *   subclasses instantiate specific SalaryCalculator products.
@@ -84,15 +86,27 @@ public class PayrollServiceImpl implements PayrollService {
         return employeeDirectory.findEmployeeById(id);
     }
 
+    /**
+     * Registers an employee consistently into the employee directory,
+     * maintaining synchronization with the repository.
+     */
     @Override
     public void registerEmployee(Employee employee) {
         Objects.requireNonNull(employee, "Employee cannot be null");
-        repository.save(employee);
+        employeeDirectory.saveEmployee(employee);
+        if (repository != null) {
+            repository.save(employee);
+        }
     }
 
+    /**
+     * Removes an employee consistently from the employee directory and repository.
+     */
     @Override
     public boolean removeEmployee(int id) {
-        return repository.deleteById(id);
+        boolean removedFromDirectory = employeeDirectory.deleteEmployee(id);
+        boolean removedFromRepo = (repository != null) && repository.deleteById(id);
+        return removedFromDirectory || removedFromRepo;
     }
 
     @Override

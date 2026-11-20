@@ -30,4 +30,15 @@ public class RepositoryEmployeeDirectory implements EmployeeDirectory {
     public List<Employee> findAllEmployees() {
         return repository.findAll();
     }
+
+    @Override
+    public void saveEmployee(Employee employee) {
+        Objects.requireNonNull(employee, "Employee cannot be null");
+        repository.save(employee);
+    }
+
+    @Override
+    public boolean deleteEmployee(int id) {
+        return repository.deleteById(id);
+    }
 }

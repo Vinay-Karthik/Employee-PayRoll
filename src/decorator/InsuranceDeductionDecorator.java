@@ -1,12 +1,12 @@
 package decorator;
 
 import java.math.BigDecimal;
-import java.util.Objects;
 
 /**
  * Concrete Decorator for Insurance Deduction.
  *
  * Single Responsibility: Subtracts insurance premium deduction from the salary.
+ * Validates that insurance deduction does not exceed the accumulated salary.
  */
 public class InsuranceDeductionDecorator extends SalaryDecorator {
     private static final BigDecimal DEFAULT_INSURANCE_DEDUCTION = new BigDecimal("150.00");
@@ -38,10 +38,20 @@ public class InsuranceDeductionDecorator extends SalaryDecorator {
 
     /**
      * Subtracts the insurance deduction from the accumulated salary.
+     * Validates that the deduction does not exceed the accumulated salary, preventing negative salary.
+     *
+     * @return salary after insurance deduction
+     * @throws IllegalStateException if insurance deduction exceeds accumulated salary
      */
     @Override
     public BigDecimal calculateSalary() {
-        return super.calculateSalary().subtract(insuranceDeduction);
+        BigDecimal accumulatedSalary = super.calculateSalary();
+        if (insuranceDeduction.compareTo(accumulatedSalary) > 0) {
+            throw new IllegalStateException(
+                    "Insurance deduction (" + insuranceDeduction + ") cannot exceed accumulated salary (" + accumulatedSalary + ")"
+            );
+        }
+        return accumulatedSalary.subtract(insuranceDeduction);
     }
 
     @Override

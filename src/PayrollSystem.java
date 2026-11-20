@@ -1,14 +1,12 @@
 import report.FileReportExporter;
 import report.ReportExporter;
-import repository.CsvEmployeeRepository;
 import repository.EmployeeRepository;
+import repository.InMemoryEmployeeRepository;
 import service.PayrollService;
 import service.PayrollServiceImpl;
 import ui.ConsoleView;
 import ui.PayrollCLI;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Scanner;
 
 /**
@@ -21,13 +19,11 @@ import java.util.Scanner;
  * - Open-Closed Principle (OCP): New report exporters or repositories can be swapped in without modifying domain or UI code.
  */
 public class PayrollSystem {
-    private static final String DEFAULT_DATA_FILE = "employees.csv";
     private static final String DEFAULT_REPORT_FILE = "payroll_summary_report.txt";
 
     public static void main(String[] args) {
         // Dependency Injection & Configuration Setup
-        Path dataFilePath = Paths.get(DEFAULT_DATA_FILE);
-        EmployeeRepository repository = new CsvEmployeeRepository(dataFilePath);
+        EmployeeRepository repository = new InMemoryEmployeeRepository();
         ReportExporter reportExporter = new FileReportExporter();
         PayrollService payrollService = new PayrollServiceImpl(repository, reportExporter);
 

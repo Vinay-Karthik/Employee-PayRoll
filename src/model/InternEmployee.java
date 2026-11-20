@@ -9,8 +9,7 @@ public class InternEmployee extends Employee {
 
     private double stipend;
 
-    public InternEmployee(int id, String name, String email, String department, String bankAccountNumber,
-                          double stipend) {
+    public InternEmployee(int id, String name, String email, String department, String bankAccountNumber, double stipend) {
         super(id, name, email, department, bankAccountNumber);
         if (stipend < 0) {
             throw new IllegalArgumentException("Stipend must be non-negative");

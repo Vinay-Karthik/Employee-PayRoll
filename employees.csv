@@ -1,5 +1,0 @@
-# id,name,email,type,baseSalary,hourlyRate,hoursWorked,bonus,stipend,department,bankAccount
-101,Alice Johnson,alice@company.com,1,6500.0,0.0,0.0,800.0,0.0,Engineering,US-112233
-102,Bob Smith,bob@company.com,2,0.0,35.0,48.0,0.0,0.0,Operations,US-445566
-103,Charlie Davis,charlie@company.com,3,0.0,75.0,60.0,0.0,0.0,IT Consulting,US-778899
-104,Diana Prince,diana@company.com,4,0.0,0.0,0.0,0.0,2500.0,Marketing,US-990011

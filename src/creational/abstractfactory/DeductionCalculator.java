@@ -1,0 +1,18 @@
+package creational.abstractfactory;
+
+/**
+ * Product interface for deduction calculation components.
+ * Implementations belong to a specific tax regime family.
+ */
+public interface DeductionCalculator {
+
+    /**
+     * Computes total deductions for the given gross pay.
+     */
+    double calculateDeductions(double grossPay);
+
+    /**
+     * Returns the regime this calculator belongs to.
+     */
+    TaxRegime getRegime();
+}

@@ -81,8 +81,7 @@ public class PayrollCLI {
             System.out.print("Enter Email: ");
             String email = scanner.nextLine().trim();
 
-            System.out.print("Enter Department: ");
-            String dept = scanner.nextLine().trim();
+            String dept = promptDepartment();
 
             System.out.print("Enter Bank Account Number: ");
             String account = scanner.nextLine().trim();
@@ -127,6 +126,43 @@ public class PayrollCLI {
         } catch (IllegalArgumentException e) {
             view.displayMessage("Validation error: " + e.getMessage());
         }
+    }
+
+    private String promptDepartment() {
+        List<String> departments = payrollService.getAllEmployees().stream()
+                .map(Employee::getDepartment)
+                .distinct()
+                .sorted()
+                .toList();
+
+        if (!departments.isEmpty()) {
+            view.displayMessage("Existing departments:");
+            for (int i = 0; i < departments.size(); i++) {
+                System.out.printf("  %d. %s%n", i + 1, departments.get(i));
+            }
+        }
+
+        System.out.print("Select department");
+        if (!departments.isEmpty()) {
+            System.out.print(" (1-" + departments.size() + ")");
+        }
+        System.out.print(" or enter a new department name: ");
+
+        String input = scanner.nextLine().trim();
+        try {
+            int choice = Integer.parseInt(input);
+            if (choice >= 1 && choice <= departments.size()) {
+                return departments.get(choice - 1);
+            }
+            throw new IllegalArgumentException("Invalid department selection: " + choice);
+        } catch (NumberFormatException ignored) {
+            // Not a number - treat as a new department name
+        }
+
+        if (input.isEmpty()) {
+            throw new IllegalArgumentException("Department cannot be empty");
+        }
+        return input;
     }
 
     private void handleIndividualPaySlip() {

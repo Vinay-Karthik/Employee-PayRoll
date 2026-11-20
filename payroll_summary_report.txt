@@ -7,6 +7,7 @@ ID    | Name             | Role Category          | Gross      | Tax        | De
 102   | Bob Smith        | Part-Time Hourly       | $1820.00   | $218.40    | $0.00      | $1601.60  
 103   | Charlie Davis    | Independent Contractor | $4500.00   | $0.00      | $90.00     | $4410.00  
 104   | Diana Prince     | Intern                 | $2500.00   | $25.00     | $0.00      | $2475.00  
+105   | vinay            | Full-Time Salaried     | $35000.00  | $9100.00   | $1900.00   | $24000.00 
 ========================================================================================
-TOTALS: Gross: $16120.00 | Tax: $1864.40 | Deductions: $605.00 | Total Disbursed: $13650.60
+TOTALS: Gross: $51120.00 | Tax: $10964.40 | Deductions: $2505.00 | Total Disbursed: $37650.60
 ========================================================================================

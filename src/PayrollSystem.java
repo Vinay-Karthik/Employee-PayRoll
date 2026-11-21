@@ -6,6 +6,7 @@ import report.FileReportExporter;
 import report.ReportExporter;
 import repository.EmployeeRepository;
 import repository.InMemoryEmployeeRepository;
+import service.PayrollFacade;
 import service.PayrollService;
 import service.PayrollServiceImpl;
 import ui.ConsoleView;
@@ -24,6 +25,7 @@ import java.util.Scanner;
  * - Builder Pattern (model): Validated immutable PayrollRequest construction.
  * - Prototype Pattern (model): Deep-copied customizable payroll templates.
  * - Singleton Pattern (config): Shared configuration provider.
+ * - Facade Pattern (service): PayrollFacade orchestrates the monthly payroll workflow.
  */
 public class PayrollSystem {
     private static final String DEFAULT_REPORT_FILE = "payroll_summary_report.txt";
@@ -43,15 +45,17 @@ public class PayrollSystem {
         // 2. Inject EmployeeDirectory into PayrollService via Constructor Injection
         PayrollService payrollService = new PayrollServiceImpl(
                 employeeDirectory,
-                repository,
                 reportExporter,
                 SalaryCalculatorFactory::forType
         );
 
+        // 3. Create Facade for orchestrating monthly payroll workflow
+        PayrollFacade payrollFacade = new PayrollFacade(payrollService, reportExporter);
+
         ConsoleView view = new ConsoleView();
         Scanner scanner = new Scanner(System.in);
 
-        PayrollCLI cli = new PayrollCLI(payrollService, view, scanner, DEFAULT_REPORT_FILE);
+        PayrollCLI cli = new PayrollCLI(payrollFacade, payrollService, view, scanner, DEFAULT_REPORT_FILE);
 
         // Start Application
         try {

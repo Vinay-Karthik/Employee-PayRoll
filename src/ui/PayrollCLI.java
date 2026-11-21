@@ -4,6 +4,8 @@ import config.PayrollConfig;
 import decorator.DecoratorType;
 import decorator.SalaryEnhancementPipeline;
 import model.*;
+import service.PayrollBatchResult;
+import service.PayrollFacade;
 import service.PayrollService;
 import tax.TaxRegime;
 
@@ -16,16 +18,19 @@ import java.util.Scanner;
 
 /**
  * Controller for CLI interaction.
- * Coordinates user input with PayrollService and ConsoleView.
+ * Coordinates user input with PayrollFacade and ConsoleView.
  * Keeps business rules strictly outside this presentation controller.
  */
 public class PayrollCLI {
+    private final PayrollFacade payrollFacade;
     private final PayrollService payrollService;
     private final ConsoleView view;
     private final Scanner scanner;
     private final String reportFilePath;
 
-    public PayrollCLI(PayrollService payrollService, ConsoleView view, Scanner scanner, String reportFilePath) {
+    public PayrollCLI(PayrollFacade payrollFacade, PayrollService payrollService,
+                      ConsoleView view, Scanner scanner, String reportFilePath) {
+        this.payrollFacade = Objects.requireNonNull(payrollFacade, "PayrollFacade must not be null");
         this.payrollService = Objects.requireNonNull(payrollService, "PayrollService must not be null");
         this.view = Objects.requireNonNull(view, "ConsoleView must not be null");
         this.scanner = Objects.requireNonNull(scanner, "Scanner must not be null");
@@ -153,20 +158,33 @@ public class PayrollCLI {
     }
 
     private void handleFullPayroll() {
-        List<PaySlip> slips = payrollService.processAllPaySlips();
-        if (slips.isEmpty()) {
-            view.displayMessage("No employees in the system to process payroll for!");
+        PayrollBatchResult result = payrollFacade.processMonthlyPayroll(reportFilePath);
+
+        // Display summary based on result
+        view.displayMessage("\n=== Monthly Payroll Processing Result ===");
+        view.displayMessage("Status: " + result.getStatus());
+        view.displayMessage("Total Employees: " + result.getTotalEmployees());
+        view.displayMessage("Successful Payslips: " + result.getSuccessfulCount());
+        view.displayMessage("Failed Payslips: " + result.getFailedCount());
+
+        if (result.isPartialSuccess()) {
+            view.displayMessage("WARNING: Some employees failed. Failed IDs: " + result.getFailedEmployeeIds());
+        } else if (result.isFailure()) {
+            view.displayError("Payroll processing failed: " + result.getErrorMessage());
+            if (!result.getFailedEmployeeIds().isEmpty()) {
+                view.displayMessage("Failed Employee IDs: " + result.getFailedEmployeeIds());
+            }
             return;
         }
 
-        String report = payrollService.generatePayrollSummaryReport(slips);
-        view.displayReport(report);
+        // Display the summary report if available
+        if (result.getSummaryReport() != null && !result.getSummaryReport().isBlank()) {
+            view.displayReport(result.getSummaryReport());
+        }
 
-        try {
-            payrollService.exportSummaryReport(report, reportFilePath);
-            view.displayMessage("Successfully exported report to: " + reportFilePath);
-        } catch (Exception e) {
-            view.displayError("Failed to export report file: " + e.getMessage());
+        // Display export confirmation
+        if (result.getReportDestination() != null && !result.getReportDestination().isBlank()) {
+            view.displayMessage("Successfully exported report to: " + result.getReportDestination());
         }
     }
 

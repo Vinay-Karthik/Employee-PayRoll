@@ -4,8 +4,6 @@ import integration.ExternalHRAdapter;
 import integration.ExternalHRService;
 import report.FileReportExporter;
 import report.ReportExporter;
-import repository.EmployeeRepository;
-import repository.InMemoryEmployeeRepository;
 import service.PayrollFacade;
 import service.PayrollService;
 import service.PayrollServiceImpl;
@@ -31,8 +29,7 @@ public class PayrollSystem {
     private static final String DEFAULT_REPORT_FILE = "payroll_summary_report.txt";
 
     public static void main(String[] args) {
-        // Core persistence and reporting dependencies
-        EmployeeRepository repository = new InMemoryEmployeeRepository();
+        // Core reporting dependency
         ReportExporter reportExporter = new FileReportExporter();
 
         // 1. Adapter Pattern Setup:

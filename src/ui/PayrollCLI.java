@@ -182,9 +182,11 @@ public class PayrollCLI {
             view.displayReport(result.getSummaryReport());
         }
 
-        // Display export confirmation
-        if (result.getReportDestination() != null && !result.getReportDestination().isBlank()) {
+        // Display export confirmation - use isReportExported() to avoid false success messages
+        if (result.isReportExported()) {
             view.displayMessage("Successfully exported report to: " + result.getReportDestination());
+        } else if (result.getStatus() == PayrollBatchResult.Status.SUCCESS && result.getTotalEmployees() == 0) {
+            view.displayMessage("No report exported (no employees in system).");
         }
     }
 

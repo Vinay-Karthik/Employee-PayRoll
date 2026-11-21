@@ -36,8 +36,9 @@ public final class PayrollBatchResult {
         this.totalEmployees = builder.totalEmployees;
         this.successfulCount = builder.successfulCount;
         this.failedCount = builder.failedCount;
-        this.successfulPaySlips = Collections.unmodifiableList(builder.successfulPaySlips);
-        this.failedEmployeeIds = Collections.unmodifiableList(builder.failedEmployeeIds);
+        // Defensive copies to ensure immutability
+        this.successfulPaySlips = List.copyOf(builder.successfulPaySlips);
+        this.failedEmployeeIds = List.copyOf(builder.failedEmployeeIds);
         this.summaryReport = builder.summaryReport;
         this.reportDestination = builder.reportDestination;
         this.errorMessage = builder.errorMessage;
@@ -91,12 +92,20 @@ public final class PayrollBatchResult {
         return status == Status.FAILURE;
     }
 
+    /**
+     * Returns true only if a report was actually exported.
+     * This avoids false success messages when no employees exist or export failed.
+     */
+    public boolean isReportExported() {
+        return reportDestination != null && !reportDestination.isBlank()
+                && summaryReport != null && !summaryReport.isBlank();
+    }
+
     @Override
     public String toString() {
         return String.format(
                 "PayrollBatchResult{status=%s, total=%d, successful=%d, failed=%d, reportExported=%s}",
-                status, totalEmployees, successfulCount, failedCount,
-                reportDestination != null && !reportDestination.isBlank()
+                status, totalEmployees, successfulCount, failedCount, isReportExported()
         );
     }
 
@@ -121,16 +130,25 @@ public final class PayrollBatchResult {
         }
 
         public Builder totalEmployees(int totalEmployees) {
+            if (totalEmployees < 0) {
+                throw new IllegalArgumentException("Total employees cannot be negative");
+            }
             this.totalEmployees = totalEmployees;
             return this;
         }
 
         public Builder successfulCount(int successfulCount) {
+            if (successfulCount < 0) {
+                throw new IllegalArgumentException("Successful count cannot be negative");
+            }
             this.successfulCount = successfulCount;
             return this;
         }
 
         public Builder failedCount(int failedCount) {
+            if (failedCount < 0) {
+                throw new IllegalArgumentException("Failed count cannot be negative");
+            }
             this.failedCount = failedCount;
             return this;
         }
@@ -161,7 +179,12 @@ public final class PayrollBatchResult {
         }
 
         public PayrollBatchResult build() {
-            // Validate consistency
+            // Validate negative counts
+            if (totalEmployees < 0 || successfulCount < 0 || failedCount < 0) {
+                throw new IllegalStateException("Counts cannot be negative");
+            }
+
+            // Validate consistency: total = successful + failed
             if (totalEmployees != successfulCount + failedCount) {
                 throw new IllegalStateException(
                         "Inconsistent counts: total=" + totalEmployees +
@@ -170,8 +193,41 @@ public final class PayrollBatchResult {
                 );
             }
 
-            // Determine status if not explicitly set
-            if (status == null) {
+            // Validate successful count matches payslip list size
+            if (successfulCount != successfulPaySlips.size()) {
+                throw new IllegalStateException(
+                        "Inconsistent successful count: count=" + successfulCount +
+                        ", list size=" + successfulPaySlips.size()
+                );
+            }
+
+            // Validate failed count matches failed ID list size
+            if (failedCount != failedEmployeeIds.size()) {
+                throw new IllegalStateException(
+                        "Inconsistent failed count: count=" + failedCount +
+                        ", list size=" + failedEmployeeIds.size()
+                );
+            }
+
+            // Validate status consistency with counts if explicitly set
+            if (status != null) {
+                if (status == Status.SUCCESS && (failedCount > 0 || successfulCount == 0)) {
+                    throw new IllegalStateException(
+                            "Status SUCCESS requires failedCount=0 and successfulCount>0"
+                    );
+                }
+                if (status == Status.PARTIAL_SUCCESS && (successfulCount == 0 || failedCount == 0)) {
+                    throw new IllegalStateException(
+                            "Status PARTIAL_SUCCESS requires both successfulCount>0 and failedCount>0"
+                    );
+                }
+                if (status == Status.FAILURE && successfulCount > 0) {
+                    throw new IllegalStateException(
+                            "Status FAILURE requires successfulCount=0"
+                    );
+                }
+            } else {
+                // Determine status from counts
                 if (failedCount == 0 && successfulCount > 0) {
                     status = Status.SUCCESS;
                 } else if (successfulCount > 0) {

@@ -1,6 +1,5 @@
 package service;
 
-import integration.EmployeeDirectory;
 import model.Employee;
 import model.PaySlip;
 import report.ReportExporter;
@@ -31,7 +30,7 @@ import java.util.logging.Logger;
  *
  * <p>Usage example:
  * <pre>{@code
- * PayrollFacade facade = new PayrollFacade(payrollService);
+ * PayrollFacade facade = new PayrollFacade(payrollService, reportExporter);
  * PayrollBatchResult result = facade.processMonthlyPayroll("payroll_summary_report.txt");
  * // Presentation layer displays result
  * }</pre>
@@ -69,9 +68,10 @@ public class PayrollFacade {
      * <p>Failures are handled gracefully:
      * <ul>
      *   <li>Individual employee payslip failures are collected without stopping the batch</li>
-     *   <li>If no employees are found, returns a SUCCESS result with zero counts</li>
+     *   <li>If no employees are found, returns a SUCCESS result with zero counts (no export)</li>
      *   <li>If no payslips are generated successfully, returns FAILURE status</li>
      *   <li>If report generation or export fails, returns FAILURE status with error details</li>
+     *   <li>Employee retrieval failures are captured and returned as FAILURE result</li>
      * </ul>
      *
      * @param reportDestination the file path or destination identifier for the summary report
@@ -81,8 +81,23 @@ public class PayrollFacade {
     public PayrollBatchResult processMonthlyPayroll(String reportDestination) {
         Objects.requireNonNull(reportDestination, "Report destination must not be null");
 
-        // Step 1: Retrieve all employees
-        List<Employee> employees = retrieveEmployees();
+        // Step 1: Retrieve all employees (with failure handling)
+        List<Employee> employees;
+        try {
+            employees = retrieveEmployees();
+        } catch (PayrollProcessingException e) {
+            LOGGER.log(Level.SEVERE, "Employee retrieval failed: " + e.getMessage(), e);
+            return PayrollBatchResult.builder()
+                    .status(PayrollBatchResult.Status.FAILURE)
+                    .totalEmployees(0)
+                    .successfulCount(0)
+                    .failedCount(0)
+                    .successfulPaySlips(List.of())
+                    .failedEmployeeIds(List.of())
+                    .errorMessage("Employee retrieval failed: " + e.getMessage())
+                    // No report destination set since no export was attempted
+                    .build();
+        }
 
         if (employees.isEmpty()) {
             LOGGER.info("No employees found. Payroll processing completed with no payslips generated.");
@@ -94,7 +109,7 @@ public class PayrollFacade {
                     .successfulPaySlips(List.of())
                     .failedEmployeeIds(List.of())
                     .summaryReport("")
-                    .reportDestination(reportDestination)
+                    // No report destination set - no export was attempted
                     .build();
         }
 
@@ -115,7 +130,7 @@ public class PayrollFacade {
                     .successfulPaySlips(List.of())
                     .failedEmployeeIds(generationResult.failedEmployeeIds())
                     .errorMessage(errorMsg)
-                    .reportDestination(reportDestination)
+                    // No report destination set
                     .build();
         }
 

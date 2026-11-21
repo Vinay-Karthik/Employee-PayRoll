@@ -17,6 +17,16 @@ public abstract class SalaryDecorator implements SalaryCalculator {
         this.decoratedCalculator = Objects.requireNonNull(decoratedCalculator, "Decorated salary calculator must not be null");
     }
 
+    public SalaryCalculator getDecoratedCalculator() {
+        return decoratedCalculator;
+    }
+
+    /**
+     * Returns the DecoratorType associated with this concrete decorator.
+     * Used for chain discovery and single-use constraint verification.
+     */
+    public abstract DecoratorType getDecoratorType();
+
     @Override
     public BigDecimal calculateSalary() {
         return decoratedCalculator.calculateSalary();

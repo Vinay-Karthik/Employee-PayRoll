@@ -39,6 +39,11 @@ public class InsuranceDeductionDecorator extends SalaryDecorator {
         this.insuranceDeduction = insuranceDeduction.setScale(2, RoundingMode.HALF_UP);
     }
 
+    @Override
+    public DecoratorType getDecoratorType() {
+        return DecoratorType.INSURANCE_DEDUCTION;
+    }
+
     /**
      * Subtracts the insurance deduction from the accumulated salary.
      * Validates that the deduction does not exceed the accumulated salary, preventing negative salary.

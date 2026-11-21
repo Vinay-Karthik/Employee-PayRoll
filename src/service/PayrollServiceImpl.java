@@ -3,11 +3,16 @@ package service;
 import calculator.SalaryCalculator;
 import calculator.SalaryCalculatorFactory;
 import config.PayrollConfig;
+import decorator.DecoratorType;
 import decorator.SalaryEnhancementPipeline;
 import integration.EmployeeDirectory;
 import integration.RepositoryEmployeeDirectory;
 import model.Employee;
 import model.EmployeeType;
+import model.FullTimeEmployee;
+import model.PartTimeEmployee;
+import model.ContractorEmployee;
+import model.InternEmployee;
 import model.PaySlip;
 import model.PayrollRequest;
 import report.ReportExporter;
@@ -19,6 +24,7 @@ import tax.TaxCalculator;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -29,40 +35,32 @@ import java.util.function.Function;
  */
 public class PayrollServiceImpl implements PayrollService {
     private final EmployeeDirectory employeeDirectory;
-    private final EmployeeRepository repository;
     private final ReportExporter reportExporter;
     private final Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver;
 
     /**
      * Primary constructor injecting EmployeeDirectory via constructor injection (Adapter Pattern).
+     * EmployeeDirectory is the single authoritative persistence abstraction (it adapts EmployeeRepository).
      */
     public PayrollServiceImpl(EmployeeDirectory employeeDirectory,
-                              EmployeeRepository repository,
                               ReportExporter reportExporter,
                               Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver) {
         this.employeeDirectory = Objects.requireNonNull(employeeDirectory, "EmployeeDirectory must not be null");
-        this.repository = Objects.requireNonNull(repository, "Repository must not be null");
         this.reportExporter = Objects.requireNonNull(reportExporter, "Report exporter must not be null");
         this.salaryCalculatorFactoryResolver = Objects.requireNonNull(salaryCalculatorFactoryResolver, "Factory resolver must not be null");
     }
 
     public PayrollServiceImpl(EmployeeDirectory employeeDirectory,
-                              EmployeeRepository repository,
                               ReportExporter reportExporter) {
-        this(employeeDirectory, repository, reportExporter, SalaryCalculatorFactory::forType);
+        this(employeeDirectory, reportExporter, SalaryCalculatorFactory::forType);
     }
 
     /**
-     * Overloaded constructor for backward compatibility.
+     * Convenience constructor for backward compatibility.
      * Uses RepositoryEmployeeDirectory as default adapter for EmployeeRepository.
      */
     public PayrollServiceImpl(EmployeeRepository repository, ReportExporter reportExporter) {
-        this(new RepositoryEmployeeDirectory(repository), repository, reportExporter, SalaryCalculatorFactory::forType);
-    }
-
-    public PayrollServiceImpl(EmployeeRepository repository, ReportExporter reportExporter,
-                              Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver) {
-        this(new RepositoryEmployeeDirectory(repository), repository, reportExporter, salaryCalculatorFactoryResolver);
+        this(new RepositoryEmployeeDirectory(repository), reportExporter);
     }
 
     @Override
@@ -79,16 +77,11 @@ public class PayrollServiceImpl implements PayrollService {
     public void registerEmployee(Employee employee) {
         Objects.requireNonNull(employee, "Employee cannot be null");
         employeeDirectory.saveEmployee(employee);
-        if (repository != null) {
-            repository.save(employee);
-        }
     }
 
     @Override
     public boolean removeEmployee(int id) {
-        boolean removedFromDirectory = employeeDirectory.deleteEmployee(id);
-        boolean removedFromRepo = (repository != null) && repository.deleteById(id);
-        return removedFromDirectory || removedFromRepo;
+        return employeeDirectory.deleteEmployee(id);
     }
 
     @Override
@@ -123,6 +116,15 @@ public class PayrollServiceImpl implements PayrollService {
         BigDecimal deductions = deductionCalculator.calculateDeductions(gross)
                 .add(request.totalOptionalDeductions());
         BigDecimal net = gross.subtract(tax).subtract(deductions);
+
+        // Issue 4: Validate net pay is not negative
+        if (net.signum() < 0) {
+            throw new IllegalStateException(
+                    "Calculated net pay is negative (" + net + "). " +
+                    "Gross: " + gross + ", Tax: " + tax + ", Deductions: " + deductions +
+                    ". Deductions exceed payable salary."
+            );
+        }
 
         return new PaySlip(
                 request.getEmployeeId(),
@@ -191,5 +193,136 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     public SalaryEnhancementPipeline createSalaryEnhancementPipeline(BigDecimal baseSalary) {
         return new SalaryEnhancementPipeline(baseSalary);
+    }
+
+    /**
+     * Generates a PaySlip for an employee using the SalaryEnhancementPipeline.
+     * This integrates the decorator-based salary enhancement flow with the standard
+     * employee payslip generation, allowing dynamic application of HRA, allowances,
+     * bonuses, and deductions on top of the employee's base salary.
+     *
+     * @param employeeId the ID of the employee
+     * @param decoratorTypes the decorator types to apply (e.g., HRA, TRANSPORT_ALLOWANCE)
+     * @return Optional containing the enhanced PaySlip, or empty if employee not found
+     */
+    @Override
+    public Optional<PaySlip> generateEnhancedPaySlip(int employeeId, DecoratorType... decoratorTypes) {
+        return employeeDirectory.findEmployeeById(employeeId).map(employee -> {
+            // Initialize pipeline with employee's base salary
+            BigDecimal baseSalary = extractBaseSalary(employee);
+            SalaryEnhancementPipeline pipeline = new SalaryEnhancementPipeline(baseSalary);
+
+            // Apply requested decorators with default amounts
+            for (DecoratorType type : decoratorTypes) {
+                pipeline.applyDecorator(type);
+            }
+
+            // Build PaySlip from pipeline results
+            BigDecimal gross = pipeline.getCurrentSalary();
+            BigDecimal tax = calculateTaxForEmployee(employee, gross);
+            BigDecimal deductions = calculateDeductionsForEmployee(employee, gross);
+            BigDecimal net = gross.subtract(tax).subtract(deductions);
+
+            // Issue 4: Validate net pay is not negative
+            if (net.signum() < 0) {
+                throw new IllegalStateException(
+                        "Calculated net pay is negative (" + net + "). " +
+                        "Gross: " + gross + ", Tax: " + tax + ", Deductions: " + deductions
+                );
+            }
+
+            return new PaySlip(
+                    employee.getId(),
+                    employee.getName(),
+                    employee.getDepartment(),
+                    employee.getRoleCategory(),
+                    employee.getBankAccountNumber(),
+                    gross, tax, deductions, net,
+                    PayrollConfig.getInstance().getFinancialYear(),
+                    pipeline.getCurrentDescription()
+            );
+        });
+    }
+
+    /**
+     * Generates a PaySlip for an employee using the SalaryEnhancementPipeline
+     * with custom amounts for specific decorators.
+     *
+     * @param employeeId the ID of the employee
+     * @param decoratorCustomAmounts map of decorator types to custom amounts
+     * @return Optional containing the enhanced PaySlip, or empty if employee not found
+     */
+    @Override
+    public Optional<PaySlip> generateEnhancedPaySlip(int employeeId, java.util.Map<DecoratorType, BigDecimal> decoratorCustomAmounts) {
+        return employeeDirectory.findEmployeeById(employeeId).map(employee -> {
+            BigDecimal baseSalary = extractBaseSalary(employee);
+            SalaryEnhancementPipeline pipeline = new SalaryEnhancementPipeline(baseSalary);
+
+            for (java.util.Map.Entry<DecoratorType, BigDecimal> entry : decoratorCustomAmounts.entrySet()) {
+                pipeline.applyDecorator(entry.getKey(), entry.getValue());
+            }
+
+            BigDecimal gross = pipeline.getCurrentSalary();
+            BigDecimal tax = calculateTaxForEmployee(employee, gross);
+            BigDecimal deductions = calculateDeductionsForEmployee(employee, gross);
+            BigDecimal net = gross.subtract(tax).subtract(deductions);
+
+            // Issue 4: Validate net pay is not negative
+            if (net.signum() < 0) {
+                throw new IllegalStateException(
+                        "Calculated net pay is negative (" + net + "). " +
+                        "Gross: " + gross + ", Tax: " + tax + ", Deductions: " + deductions
+                );
+            }
+
+            return new PaySlip(
+                    employee.getId(),
+                    employee.getName(),
+                    employee.getDepartment(),
+                    employee.getRoleCategory(),
+                    employee.getBankAccountNumber(),
+                    gross, tax, deductions, net,
+                    PayrollConfig.getInstance().getFinancialYear(),
+                    pipeline.getCurrentDescription()
+            );
+        });
+    }
+
+    /**
+     * Extracts the base salary from an employee, regardless of employee type.
+     * Uses pattern matching on known employee types.
+     */
+    private BigDecimal extractBaseSalary(Employee employee) {
+        if (employee instanceof FullTimeEmployee ft) {
+            return ft.getBaseSalary();
+        } else if (employee instanceof PartTimeEmployee pt) {
+            // For part-time, base salary = hourly rate * hours worked (regular hours only)
+            BigDecimal regularHours = pt.getHoursWorked().min(new BigDecimal("40.00"));
+            return pt.getHourlyRate().multiply(regularHours);
+        } else if (employee instanceof ContractorEmployee ct) {
+            // For contractors, base salary = hourly rate * hours worked
+            return ct.getHourlyRate().multiply(ct.getHoursWorked());
+        } else if (employee instanceof InternEmployee ie) {
+            return ie.getStipend();
+        }
+        throw new IllegalArgumentException("Unsupported employee type: " + employee.getClass().getSimpleName());
+    }
+
+    /**
+     * Calculates tax for an employee based on their type and gross salary.
+     * Delegates to the employee's own calculateTax() method for consistency.
+     */
+    private BigDecimal calculateTaxForEmployee(Employee employee, BigDecimal gross) {
+        // Use employee's own tax calculation logic for consistency
+        return employee.calculateTax();
+    }
+
+    /**
+     * Calculates deductions for an employee based on their type and gross salary.
+     * Delegates to the employee's own calculateDeductions() method for consistency.
+     */
+    private BigDecimal calculateDeductionsForEmployee(Employee employee, BigDecimal gross) {
+        // Use employee's own deduction calculation logic for consistency
+        return employee.calculateDeductions();
     }
 }

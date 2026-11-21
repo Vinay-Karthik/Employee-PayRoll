@@ -42,6 +42,11 @@ public class PerformanceBonusDecorator extends SalaryDecorator {
     }
 
     @Override
+    public DecoratorType getDecoratorType() {
+        return DecoratorType.PERFORMANCE_BONUS;
+    }
+
+    @Override
     public BigDecimal calculateSalary() {
         return super.calculateSalary().add(bonusAmount).setScale(2, RoundingMode.HALF_UP);
     }

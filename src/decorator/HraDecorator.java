@@ -42,6 +42,11 @@ public class HraDecorator extends SalaryDecorator {
     }
 
     @Override
+    public DecoratorType getDecoratorType() {
+        return DecoratorType.HRA;
+    }
+
+    @Override
     public BigDecimal calculateSalary() {
         return super.calculateSalary().add(hraAmount).setScale(2, RoundingMode.HALF_UP);
     }

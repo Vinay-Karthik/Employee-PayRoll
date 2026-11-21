@@ -39,6 +39,11 @@ public class TransportAllowanceDecorator extends SalaryDecorator {
     }
 
     @Override
+    public DecoratorType getDecoratorType() {
+        return DecoratorType.TRANSPORT_ALLOWANCE;
+    }
+
+    @Override
     public BigDecimal calculateSalary() {
         return super.calculateSalary().add(transportAllowance).setScale(2, RoundingMode.HALF_UP);
     }

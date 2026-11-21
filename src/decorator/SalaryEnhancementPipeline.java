@@ -25,18 +25,14 @@ public class SalaryEnhancementPipeline {
      * Initializes the pipeline with a base salary component.
      *
      * @param baseSalary the initial non-null, non-negative base salary
+     * @throws IllegalArgumentException if baseSalary is null or negative
      */
     public SalaryEnhancementPipeline(BigDecimal baseSalary) {
+        Objects.requireNonNull(baseSalary, "Base salary must not be null");
+        if (baseSalary.signum() < 0) {
+            throw new IllegalArgumentException("Base salary must be non-negative");
+        }
         this.currentCalculator = new BaseSalaryCalculator(baseSalary);
-    }
-
-    /**
-     * Initializes the pipeline from an existing SalaryCalculator component.
-     *
-     * @param baseCalculator existing base calculator component
-     */
-    public SalaryEnhancementPipeline(SalaryCalculator baseCalculator) {
-        this.currentCalculator = Objects.requireNonNull(baseCalculator, "Base calculator cannot be null");
     }
 
     /**
@@ -128,12 +124,5 @@ public class SalaryEnhancementPipeline {
      */
     public String getCurrentDescription() {
         return currentCalculator.getDescription();
-    }
-
-    /**
-     * Returns the current SalaryCalculator component.
-     */
-    public SalaryCalculator getCalculator() {
-        return currentCalculator;
     }
 }

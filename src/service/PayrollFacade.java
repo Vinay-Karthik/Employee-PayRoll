@@ -70,7 +70,8 @@ public class PayrollFacade {
      *   <li>Individual employee payslip failures are collected without stopping the batch</li>
      *   <li>If no employees are found, returns a SUCCESS result with zero counts (no export)</li>
      *   <li>If no payslips are generated successfully, returns FAILURE status</li>
-     *   <li>If report generation or export fails, returns FAILURE status with error details</li>
+     *   <li>If report generation or export fails, returns FAILURE status with error details
+     *       but preserves the successfully generated payslips</li>
      *   <li>Employee retrieval failures are captured and returned as FAILURE result</li>
      * </ul>
      *
@@ -95,7 +96,8 @@ public class PayrollFacade {
                     .successfulPaySlips(List.of())
                     .failedEmployeeIds(List.of())
                     .errorMessage("Employee retrieval failed: " + e.getMessage())
-                    // No report destination set since no export was attempted
+                    .failedStage(PayrollBatchResult.FailedStage.EMPLOYEE_RETRIEVAL)
+                    .reportExported(false)
                     .build();
         }
 
@@ -109,7 +111,9 @@ public class PayrollFacade {
                     .successfulPaySlips(List.of())
                     .failedEmployeeIds(List.of())
                     .summaryReport("")
-                    // No report destination set - no export was attempted
+                    .reportDestination("") // No export attempted
+                    .reportExported(false)
+                    .failedStage(PayrollBatchResult.FailedStage.NONE)
                     .build();
         }
 
@@ -130,7 +134,8 @@ public class PayrollFacade {
                     .successfulPaySlips(List.of())
                     .failedEmployeeIds(generationResult.failedEmployeeIds())
                     .errorMessage(errorMsg)
-                    // No report destination set
+                    .failedStage(PayrollBatchResult.FailedStage.PAYSLIP_GENERATION)
+                    .reportExported(false)
                     .build();
         }
 
@@ -148,8 +153,11 @@ public class PayrollFacade {
                     .failedCount(generationResult.failedEmployeeIds().size())
                     .successfulPaySlips(generationResult.successfulPaySlips())
                     .failedEmployeeIds(generationResult.failedEmployeeIds())
-                    .errorMessage(errorMsg)
+                    .summaryReport("") // No report generated
                     .reportDestination(reportDestination)
+                    .errorMessage(errorMsg)
+                    .failedStage(PayrollBatchResult.FailedStage.REPORT_GENERATION)
+                    .reportExported(false)
                     .build();
         }
 
@@ -167,9 +175,11 @@ public class PayrollFacade {
                     .failedCount(generationResult.failedEmployeeIds().size())
                     .successfulPaySlips(generationResult.successfulPaySlips())
                     .failedEmployeeIds(generationResult.failedEmployeeIds())
-                    .summaryReport(summaryReport)
-                    .errorMessage(errorMsg)
+                    .summaryReport(summaryReport) // Report was generated but export failed
                     .reportDestination(reportDestination)
+                    .errorMessage(errorMsg)
+                    .failedStage(PayrollBatchResult.FailedStage.REPORT_EXPORT)
+                    .reportExported(false) // Export failed
                     .build();
         }
 
@@ -190,6 +200,8 @@ public class PayrollFacade {
                 .failedEmployeeIds(generationResult.failedEmployeeIds())
                 .summaryReport(summaryReport)
                 .reportDestination(reportDestination)
+                .failedStage(PayrollBatchResult.FailedStage.NONE)
+                .reportExported(true) // Export succeeded
                 .build();
     }
 

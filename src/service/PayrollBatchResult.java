@@ -10,8 +10,10 @@ import java.util.Objects;
  * Immutable result of a monthly payroll batch processing operation.
  *
  * <p>Explicitly communicates the outcome of the batch, including total employees,
- * successful payslips, failed employees, and processing status. This enables
- * the presentation layer to clearly display partial-success scenarios.
+ * successful payslips, failed employees, processing status, and the workflow
+ * stage at which any failure occurred. This enables the presentation layer to
+ * clearly display partial-success scenarios and distinguish between different
+ * failure types.
  */
 public final class PayrollBatchResult {
 
@@ -19,6 +21,19 @@ public final class PayrollBatchResult {
         SUCCESS,
         PARTIAL_SUCCESS,
         FAILURE
+    }
+
+    /**
+     * Workflow stage at which a failure occurred (if any).
+     * Used to distinguish between different types of failures while preserving
+     * successfully generated payslips.
+     */
+    public enum FailedStage {
+        EMPLOYEE_RETRIEVAL,
+        PAYSLIP_GENERATION,
+        REPORT_GENERATION,
+        REPORT_EXPORT,
+        NONE
     }
 
     private final Status status;
@@ -30,6 +45,8 @@ public final class PayrollBatchResult {
     private final String summaryReport;
     private final String reportDestination;
     private final String errorMessage;
+    private final FailedStage failedStage;
+    private final boolean reportExported;
 
     private PayrollBatchResult(Builder builder) {
         this.status = Objects.requireNonNull(builder.status, "Status must not be null");
@@ -42,6 +59,8 @@ public final class PayrollBatchResult {
         this.summaryReport = builder.summaryReport;
         this.reportDestination = builder.reportDestination;
         this.errorMessage = builder.errorMessage;
+        this.failedStage = Objects.requireNonNullElse(builder.failedStage, FailedStage.NONE);
+        this.reportExported = builder.reportExported;
     }
 
     public Status getStatus() {
@@ -80,6 +99,14 @@ public final class PayrollBatchResult {
         return errorMessage;
     }
 
+    public FailedStage getFailedStage() {
+        return failedStage;
+    }
+
+    public boolean isReportExported() {
+        return reportExported;
+    }
+
     public boolean isSuccess() {
         return status == Status.SUCCESS;
     }
@@ -92,20 +119,11 @@ public final class PayrollBatchResult {
         return status == Status.FAILURE;
     }
 
-    /**
-     * Returns true only if a report was actually exported.
-     * This avoids false success messages when no employees exist or export failed.
-     */
-    public boolean isReportExported() {
-        return reportDestination != null && !reportDestination.isBlank()
-                && summaryReport != null && !summaryReport.isBlank();
-    }
-
     @Override
     public String toString() {
         return String.format(
-                "PayrollBatchResult{status=%s, total=%d, successful=%d, failed=%d, reportExported=%s}",
-                status, totalEmployees, successfulCount, failedCount, isReportExported()
+                "PayrollBatchResult{status=%s, stage=%s, total=%d, successful=%d, failed=%d, exported=%s}",
+                status, failedStage, totalEmployees, successfulCount, failedCount, reportExported
         );
     }
 
@@ -123,6 +141,8 @@ public final class PayrollBatchResult {
         private String summaryReport;
         private String reportDestination;
         private String errorMessage;
+        private FailedStage failedStage;
+        private boolean reportExported = false;
 
         public Builder status(Status status) {
             this.status = status;
@@ -178,6 +198,16 @@ public final class PayrollBatchResult {
             return this;
         }
 
+        public Builder failedStage(FailedStage failedStage) {
+            this.failedStage = failedStage;
+            return this;
+        }
+
+        public Builder reportExported(boolean reportExported) {
+            this.reportExported = reportExported;
+            return this;
+        }
+
         public PayrollBatchResult build() {
             // Validate negative counts
             if (totalEmployees < 0 || successfulCount < 0 || failedCount < 0) {
@@ -221,11 +251,8 @@ public final class PayrollBatchResult {
                             "Status PARTIAL_SUCCESS requires both successfulCount>0 and failedCount>0"
                     );
                 }
-                if (status == Status.FAILURE && successfulCount > 0) {
-                    throw new IllegalStateException(
-                            "Status FAILURE requires successfulCount=0"
-                    );
-                }
+                // FAILURE can have successful payslips (e.g., report generation/export failed)
+                // No validation restriction on FAILURE status
             } else {
                 // Determine status from counts
                 if (failedCount == 0 && successfulCount > 0) {
@@ -235,6 +262,11 @@ public final class PayrollBatchResult {
                 } else {
                     status = Status.FAILURE;
                 }
+            }
+
+            // Default failedStage to NONE if not set and status is not FAILURE
+            if (failedStage == null) {
+                failedStage = (status == Status.FAILURE) ? FailedStage.PAYSLIP_GENERATION : FailedStage.NONE;
             }
 
             return new PayrollBatchResult(this);

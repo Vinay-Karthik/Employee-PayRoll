@@ -1,17 +1,18 @@
 package model;
 
+import tax.DeductionPolicy;
+import tax.TaxPolicy;
+
 import java.math.BigDecimal;
 
 /**
  * Concrete Employee implementation for Full-Time Salaried workers.
  * All monetary values use BigDecimal to avoid floating-point errors.
+ * <p>
+ * Tax and deduction rules are delegated to {@link tax.FullTimeTaxPolicy}
+ * and {@link tax.FullTimeDeductionPolicy} for reuse across calculation paths.
  */
 public class FullTimeEmployee extends Employee {
-    private static final BigDecimal STANDARD_TAX_RATE = new BigDecimal("0.22");
-    private static final BigDecimal HIGH_EARNER_THRESHOLD = new BigDecimal("7000.00");
-    private static final BigDecimal SURTAX_RATE = new BigDecimal("0.05");
-    private static final BigDecimal HEALTH_INSURANCE_DEDUCTION = new BigDecimal("150.00");
-    private static final BigDecimal RETIREMENT_FUND_RATE = new BigDecimal("0.05");
 
     private BigDecimal baseSalary;
     private BigDecimal bonus;
@@ -58,17 +59,12 @@ public class FullTimeEmployee extends Employee {
 
     @Override
     public BigDecimal calculateTax() {
-        BigDecimal gross = calculateGrossPay();
-        BigDecimal tax = gross.multiply(STANDARD_TAX_RATE);
-        if (gross.compareTo(HIGH_EARNER_THRESHOLD) > 0) {
-            tax = tax.add(gross.subtract(HIGH_EARNER_THRESHOLD).multiply(SURTAX_RATE));
-        }
-        return tax;
+        return TaxPolicy.forEmployee(this).calculateTax(calculateGrossPay());
     }
 
     @Override
     public BigDecimal calculateDeductions() {
-        return HEALTH_INSURANCE_DEDUCTION.add(calculateGrossPay().multiply(RETIREMENT_FUND_RATE));
+        return DeductionPolicy.forEmployee(this).calculateDeductions(calculateGrossPay());
     }
 
     @Override

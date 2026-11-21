@@ -18,8 +18,10 @@ import model.PayrollRequest;
 import report.ReportExporter;
 import repository.EmployeeRepository;
 import tax.DeductionCalculator;
+import tax.DeductionPolicy;
 import tax.PayrollComponentFactory;
 import tax.TaxCalculator;
+import tax.TaxPolicy;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -309,95 +311,17 @@ public class PayrollServiceImpl implements PayrollService {
 
     /**
      * Calculates tax for an employee based on their type and the enhanced gross salary.
-     * Applies the same tax rules as the employee's standard calculation but against
-     * the enhanced gross from the decorator pipeline.
+     * Delegates to the shared {@link TaxPolicy} for the employee's type.
      */
     private BigDecimal calculateTaxForEmployee(Employee employee, BigDecimal enhancedGross) {
-        if (employee instanceof FullTimeEmployee ft) {
-            return calculateFullTimeTax(enhancedGross);
-        } else if (employee instanceof PartTimeEmployee pt) {
-            return calculatePartTimeTax(enhancedGross);
-        } else if (employee instanceof ContractorEmployee ct) {
-            return calculateContractorTax(enhancedGross);
-        } else if (employee instanceof InternEmployee ie) {
-            return calculateInternTax(enhancedGross);
-        }
-        throw new IllegalArgumentException("Unsupported employee type for tax calculation: " + employee.getClass().getSimpleName());
+        return tax.TaxPolicy.forEmployee(employee).calculateTax(enhancedGross);
     }
 
     /**
      * Calculates deductions for an employee based on their type and the enhanced gross salary.
-     * Applies the same deduction rules as the employee's standard calculation but against
-     * the enhanced gross from the decorator pipeline.
+     * Delegates to the shared {@link DeductionPolicy} for the employee's type.
      */
     private BigDecimal calculateDeductionsForEmployee(Employee employee, BigDecimal enhancedGross) {
-        if (employee instanceof FullTimeEmployee ft) {
-            return calculateFullTimeDeductions(enhancedGross);
-        } else if (employee instanceof PartTimeEmployee pt) {
-            return calculatePartTimeDeductions(enhancedGross);
-        } else if (employee instanceof ContractorEmployee ct) {
-            return calculateContractorDeductions(enhancedGross);
-        } else if (employee instanceof InternEmployee ie) {
-            return calculateInternDeductions(enhancedGross);
-        }
-        throw new IllegalArgumentException("Unsupported employee type for deduction calculation: " + employee.getClass().getSimpleName());
-    }
-
-    // Full-Time tax calculation (copied from FullTimeEmployee with enhanced gross)
-    private BigDecimal calculateFullTimeTax(BigDecimal gross) {
-        BigDecimal STANDARD_TAX_RATE = new BigDecimal("0.22");
-        BigDecimal HIGH_EARNER_THRESHOLD = new BigDecimal("7000.00");
-        BigDecimal SURTAX_RATE = new BigDecimal("0.05");
-
-        BigDecimal tax = gross.multiply(STANDARD_TAX_RATE);
-        if (gross.compareTo(HIGH_EARNER_THRESHOLD) > 0) {
-            tax = tax.add(gross.subtract(HIGH_EARNER_THRESHOLD).multiply(SURTAX_RATE));
-        }
-        return tax;
-    }
-
-    // Part-Time tax calculation (flat rate on enhanced gross)
-    private BigDecimal calculatePartTimeTax(BigDecimal gross) {
-        BigDecimal TAX_RATE = new BigDecimal("0.12");
-        return gross.multiply(TAX_RATE);
-    }
-
-    // Contractor tax calculation (no tax)
-    private BigDecimal calculateContractorTax(BigDecimal gross) {
-        return BigDecimal.ZERO;
-    }
-
-    // Intern tax calculation (with threshold)
-    private BigDecimal calculateInternTax(BigDecimal gross) {
-        BigDecimal TAX_EXEMPT_STIPEND_LIMIT = new BigDecimal("2000.00");
-        BigDecimal STIPEND_SURTAX_RATE = new BigDecimal("0.05");
-
-        if (gross.compareTo(TAX_EXEMPT_STIPEND_LIMIT) > 0) {
-            return gross.subtract(TAX_EXEMPT_STIPEND_LIMIT).multiply(STIPEND_SURTAX_RATE);
-        }
-        return BigDecimal.ZERO;
-    }
-
-    // Full-Time deductions (health insurance + retirement % of enhanced gross)
-    private BigDecimal calculateFullTimeDeductions(BigDecimal gross) {
-        BigDecimal HEALTH_INSURANCE_DEDUCTION = new BigDecimal("150.00");
-        BigDecimal RETIREMENT_FUND_RATE = new BigDecimal("0.05");
-        return HEALTH_INSURANCE_DEDUCTION.add(gross.multiply(RETIREMENT_FUND_RATE));
-    }
-
-    // Part-Time deductions (none)
-    private BigDecimal calculatePartTimeDeductions(BigDecimal gross) {
-        return BigDecimal.ZERO;
-    }
-
-    // Contractor deductions (service fee % of enhanced gross)
-    private BigDecimal calculateContractorDeductions(BigDecimal gross) {
-        BigDecimal SERVICE_FEE_RATE = new BigDecimal("0.02");
-        return gross.multiply(SERVICE_FEE_RATE);
-    }
-
-    // Intern deductions (none)
-    private BigDecimal calculateInternDeductions(BigDecimal gross) {
-        return BigDecimal.ZERO;
+        return tax.DeductionPolicy.forEmployee(employee).calculateDeductions(enhancedGross);
     }
 }

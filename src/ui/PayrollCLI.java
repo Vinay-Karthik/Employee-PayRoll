@@ -169,15 +169,28 @@ public class PayrollCLI {
 
         if (result.isPartialSuccess()) {
             view.displayMessage("WARNING: Some employees failed. Failed IDs: " + result.getFailedEmployeeIds());
+            // Display summary report for partial success
+            if (result.getSummaryReport() != null && !result.getSummaryReport().isBlank()) {
+                view.displayReport(result.getSummaryReport());
+            }
+            if (result.isReportExported()) {
+                view.displayMessage("Successfully exported report to: " + result.getReportDestination());
+            }
         } else if (result.isFailure()) {
-            view.displayError("Payroll processing failed: " + result.getErrorMessage());
+            view.displayError("Payroll processing failed at stage: " + result.getFailedStage());
+            view.displayError("Reason: " + result.getErrorMessage());
             if (!result.getFailedEmployeeIds().isEmpty()) {
                 view.displayMessage("Failed Employee IDs: " + result.getFailedEmployeeIds());
+            }
+            // If report was generated but export failed, still show the report
+            if (result.getSummaryReport() != null && !result.getSummaryReport().isBlank()) {
+                view.displayMessage("\nReport was generated but not exported:");
+                view.displayReport(result.getSummaryReport());
             }
             return;
         }
 
-        // Display the summary report if available
+        // Full success case
         if (result.getSummaryReport() != null && !result.getSummaryReport().isBlank()) {
             view.displayReport(result.getSummaryReport());
         }

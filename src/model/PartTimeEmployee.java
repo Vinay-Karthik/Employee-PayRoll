@@ -1,15 +1,20 @@
 package model;
 
+import tax.DeductionPolicy;
+import tax.TaxPolicy;
+
 import java.math.BigDecimal;
 
 /**
  * Concrete Employee implementation for Part-Time Hourly workers.
  * All monetary values use BigDecimal to avoid floating-point errors.
+ * <p>
+ * Tax and deduction rules are delegated to {@link tax.PartTimeTaxPolicy}
+ * and {@link tax.PartTimeDeductionPolicy} for reuse across calculation paths.
  */
 public class PartTimeEmployee extends Employee {
     private static final BigDecimal REGULAR_HOURS_THRESHOLD = new BigDecimal("40.00");
     private static final BigDecimal OVERTIME_MULTIPLIER = new BigDecimal("1.5");
-    private static final BigDecimal TAX_RATE = new BigDecimal("0.12");
 
     private BigDecimal hourlyRate;
     private BigDecimal hoursWorked;
@@ -62,12 +67,12 @@ public class PartTimeEmployee extends Employee {
 
     @Override
     public BigDecimal calculateTax() {
-        return calculateGrossPay().multiply(TAX_RATE);
+        return TaxPolicy.forEmployee(this).calculateTax(calculateGrossPay());
     }
 
     @Override
     public BigDecimal calculateDeductions() {
-        return BigDecimal.ZERO;
+        return DeductionPolicy.forEmployee(this).calculateDeductions(calculateGrossPay());
     }
 
     @Override

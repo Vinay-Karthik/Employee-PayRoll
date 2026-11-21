@@ -1,13 +1,18 @@
 package model;
 
+import tax.DeductionPolicy;
+import tax.TaxPolicy;
+
 import java.math.BigDecimal;
 
 /**
  * Concrete Employee implementation for Independent Contractors.
  * All monetary values use BigDecimal to avoid floating-point errors.
+ * <p>
+ * Tax and deduction rules are delegated to {@link tax.ContractorTaxPolicy}
+ * and {@link tax.ContractorDeductionPolicy} for reuse across calculation paths.
  */
 public class ContractorEmployee extends Employee {
-    private static final BigDecimal SERVICE_FEE_RATE = new BigDecimal("0.02");
 
     private BigDecimal hourlyRate;
     private BigDecimal hoursWorked;
@@ -54,12 +59,12 @@ public class ContractorEmployee extends Employee {
 
     @Override
     public BigDecimal calculateTax() {
-        return BigDecimal.ZERO; // Taxes handled independently by contractors
+        return TaxPolicy.forEmployee(this).calculateTax(calculateGrossPay());
     }
 
     @Override
     public BigDecimal calculateDeductions() {
-        return calculateGrossPay().multiply(SERVICE_FEE_RATE);
+        return DeductionPolicy.forEmployee(this).calculateDeductions(calculateGrossPay());
     }
 
     @Override

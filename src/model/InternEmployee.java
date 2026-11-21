@@ -1,14 +1,18 @@
 package model;
 
+import tax.DeductionPolicy;
+import tax.TaxPolicy;
+
 import java.math.BigDecimal;
 
 /**
  * Concrete Employee implementation for Interns.
  * All monetary values use BigDecimal to avoid floating-point errors.
+ * <p>
+ * Tax and deduction rules are delegated to {@link tax.InternTaxPolicy}
+ * and {@link tax.InternDeductionPolicy} for reuse across calculation paths.
  */
 public class InternEmployee extends Employee {
-    private static final BigDecimal TAX_EXEMPT_STIPEND_LIMIT = new BigDecimal("2000.00");
-    private static final BigDecimal STIPEND_SURTAX_RATE = new BigDecimal("0.05");
 
     private BigDecimal stipend;
 
@@ -38,15 +42,12 @@ public class InternEmployee extends Employee {
 
     @Override
     public BigDecimal calculateTax() {
-        if (stipend.compareTo(TAX_EXEMPT_STIPEND_LIMIT) > 0) {
-            return stipend.subtract(TAX_EXEMPT_STIPEND_LIMIT).multiply(STIPEND_SURTAX_RATE);
-        }
-        return BigDecimal.ZERO;
+        return TaxPolicy.forEmployee(this).calculateTax(calculateGrossPay());
     }
 
     @Override
     public BigDecimal calculateDeductions() {
-        return BigDecimal.ZERO;
+        return DeductionPolicy.forEmployee(this).calculateDeductions(calculateGrossPay());
     }
 
     @Override

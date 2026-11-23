@@ -7,14 +7,14 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Domain Service / Pipeline for dynamic salary enhancements (Decorator Pattern).
+ * Domain Service / Fluent Pipeline for dynamic salary enhancements (Decorator Pattern).
  *
  * Encapsulates all business rules related to salary decoration:
  * 1. Single-use component rule: Ensures HRA, allowances, bonuses, and deductions
  *    cannot be duplicated in the same calculation pipeline.
  * 2. Deduction validation: Ensures deductions never exceed accumulated salary.
  * 3. Assembly orchestration: Instantiates and chains appropriate decorators while
- *    keeping UI layers free of business logic.
+ *    keeping presentation layers free of decorator instantiation boilerplate.
  */
 public class SalaryEnhancementPipeline {
 
@@ -56,10 +56,11 @@ public class SalaryEnhancementPipeline {
      * Applies a standard decorator using its default configuration.
      *
      * @param type the decorator type to apply
+     * @return this pipeline for fluent chaining
      * @throws IllegalStateException if the component is already applied or deduction exceeds salary
      */
-    public void applyDecorator(DecoratorType type) {
-        applyDecorator(type, null);
+    public SalaryEnhancementPipeline applyDecorator(DecoratorType type) {
+        return applyDecorator(type, null);
     }
 
     /**
@@ -67,10 +68,11 @@ public class SalaryEnhancementPipeline {
      *
      * @param type the decorator type to apply
      * @param customAmount explicit custom amount (or null to use default)
+     * @return this pipeline for fluent chaining
      * @throws IllegalStateException if the component is already applied or deduction exceeds salary
      * @throws IllegalArgumentException if custom amount is invalid
      */
-    public void applyDecorator(DecoratorType type, BigDecimal customAmount) {
+    public SalaryEnhancementPipeline applyDecorator(DecoratorType type, BigDecimal customAmount) {
         Objects.requireNonNull(type, "DecoratorType must not be null");
 
         // Business rule 1: Single-use constraint
@@ -80,7 +82,7 @@ public class SalaryEnhancementPipeline {
             );
         }
 
-        // Business rule 2: Construct decorator and validate constraints
+        // Business rule 2: Construct decorator and chain
         SalaryCalculator enhanced = switch (type) {
             case HRA -> customAmount == null
                     ? new HraDecorator(currentCalculator)
@@ -95,7 +97,7 @@ public class SalaryEnhancementPipeline {
                 SalaryCalculator next = customAmount == null
                         ? new InsuranceDeductionDecorator(currentCalculator)
                         : new InsuranceDeductionDecorator(currentCalculator, customAmount);
-                // Validate business rule 3: deduction cannot exceed accumulated salary
+                // Validate deduction immediately against accumulated salary
                 next.calculateSalary();
                 yield next;
             }
@@ -103,6 +105,14 @@ public class SalaryEnhancementPipeline {
 
         this.currentCalculator = enhanced;
         this.appliedTypes.add(type);
+        return this;
+    }
+
+    /**
+     * Returns the underlying decorated SalaryCalculator component.
+     */
+    public SalaryCalculator getCalculator() {
+        return currentCalculator;
     }
 
     /**

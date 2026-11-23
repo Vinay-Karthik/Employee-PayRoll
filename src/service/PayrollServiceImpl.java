@@ -193,7 +193,7 @@ public class PayrollServiceImpl implements PayrollService {
 
     /**
      * Generates a PaySlip for an employee using the SalaryEnhancementPipeline.
-     * This integrates the decorator-based salary enhancement flow with the standard
+     * Integrates the decorator-based salary enhancement flow with standard
      * employee payslip generation, allowing dynamic application of HRA, allowances,
      * bonuses, and deductions on top of the employee's base salary.
      *
@@ -204,39 +204,11 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     public Optional<PaySlip> generateEnhancedPaySlip(int employeeId, DecoratorType... decoratorTypes) {
         return employeeRepository.findById(employeeId).map(employee -> {
-            // Initialize pipeline with employee's base salary
-            BigDecimal baseSalary = extractBaseSalary(employee);
-            SalaryEnhancementPipeline pipeline = new SalaryEnhancementPipeline(baseSalary);
-
-            // Apply requested decorators with default amounts
+            SalaryEnhancementPipeline pipeline = new SalaryEnhancementPipeline(extractBaseSalary(employee));
             for (DecoratorType type : decoratorTypes) {
                 pipeline.applyDecorator(type);
             }
-
-            // Build PaySlip from pipeline results
-            BigDecimal gross = pipeline.getCurrentSalary();
-            BigDecimal tax = calculateTaxForEmployee(employee, gross);
-            BigDecimal deductions = calculateDeductionsForEmployee(employee, gross);
-            BigDecimal net = gross.subtract(tax).subtract(deductions);
-
-            // Issue 4: Validate net pay is not negative
-            if (net.signum() < 0) {
-                throw new IllegalStateException(
-                        "Calculated net pay is negative (" + net + "). " +
-                        "Gross: " + gross + ", Tax: " + tax + ", Deductions: " + deductions
-                );
-            }
-
-            return new PaySlip(
-                    employee.getId(),
-                    employee.getName(),
-                    employee.getDepartment(),
-                    employee.getRoleCategory(),
-                    employee.getBankAccountNumber(),
-                    gross, tax, deductions, net,
-                    this.financialYear,
-                    pipeline.getCurrentDescription()
-            );
+            return createPaySlipFromPipeline(employee, pipeline);
         });
     }
 
@@ -251,37 +223,40 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     public Optional<PaySlip> generateEnhancedPaySlip(int employeeId, java.util.Map<DecoratorType, BigDecimal> decoratorCustomAmounts) {
         return employeeRepository.findById(employeeId).map(employee -> {
-            BigDecimal baseSalary = extractBaseSalary(employee);
-            SalaryEnhancementPipeline pipeline = new SalaryEnhancementPipeline(baseSalary);
-
+            SalaryEnhancementPipeline pipeline = new SalaryEnhancementPipeline(extractBaseSalary(employee));
             for (java.util.Map.Entry<DecoratorType, BigDecimal> entry : decoratorCustomAmounts.entrySet()) {
                 pipeline.applyDecorator(entry.getKey(), entry.getValue());
             }
-
-            BigDecimal gross = pipeline.getCurrentSalary();
-            BigDecimal tax = calculateTaxForEmployee(employee, gross);
-            BigDecimal deductions = calculateDeductionsForEmployee(employee, gross);
-            BigDecimal net = gross.subtract(tax).subtract(deductions);
-
-            // Issue 4: Validate net pay is not negative
-            if (net.signum() < 0) {
-                throw new IllegalStateException(
-                        "Calculated net pay is negative (" + net + "). " +
-                        "Gross: " + gross + ", Tax: " + tax + ", Deductions: " + deductions
-                );
-            }
-
-            return new PaySlip(
-                    employee.getId(),
-                    employee.getName(),
-                    employee.getDepartment(),
-                    employee.getRoleCategory(),
-                    employee.getBankAccountNumber(),
-                    gross, tax, deductions, net,
-                    this.financialYear,
-                    pipeline.getCurrentDescription()
-            );
+            return createPaySlipFromPipeline(employee, pipeline);
         });
+    }
+
+    /**
+     * Creates an enhanced PaySlip from an employee and evaluated SalaryEnhancementPipeline.
+     */
+    private PaySlip createPaySlipFromPipeline(Employee employee, SalaryEnhancementPipeline pipeline) {
+        BigDecimal gross = pipeline.getCurrentSalary();
+        BigDecimal tax = calculateTaxForEmployee(employee, gross);
+        BigDecimal deductions = calculateDeductionsForEmployee(employee, gross);
+        BigDecimal net = gross.subtract(tax).subtract(deductions);
+
+        if (net.signum() < 0) {
+            throw new IllegalStateException(
+                    "Calculated net pay is negative (" + net + "). " +
+                    "Gross: " + gross + ", Tax: " + tax + ", Deductions: " + deductions
+            );
+        }
+
+        return new PaySlip(
+                employee.getId(),
+                employee.getName(),
+                employee.getDepartment(),
+                employee.getRoleCategory(),
+                employee.getBankAccountNumber(),
+                gross, tax, deductions, net,
+                this.financialYear,
+                pipeline.getCurrentDescription()
+        );
     }
 
     /**
@@ -295,11 +270,6 @@ public class PayrollServiceImpl implements PayrollService {
      * @throws IllegalArgumentException if employee type is unsupported
      */
     private BigDecimal extractBaseSalary(Employee employee) {
-        // Use the employee's own calculateGrossPay() which includes all standard components:
-        // - FullTimeEmployee: baseSalary + bonus
-        // - PartTimeEmployee: regular pay + overtime pay
-        // - ContractorEmployee: hourlyRate * hoursWorked
-        // - InternEmployee: stipend
         return employee.calculateGrossPay();
     }
 

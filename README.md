@@ -96,19 +96,19 @@ Employee-PayRoll/
 
 ## 💡 Dynamic Salary Enhancement (Decorator Pattern)
 
-Decorators can wrap any `SalaryCalculator` in any sequence without modifying the original base calculator. Business rules (single-use validation, deduction caps against accumulated salary) are encapsulated in [`SalaryEnhancementPipeline`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/SalaryEnhancementPipeline.java):
+Decorators wrap `SalaryCalculator` instances in any sequence without modifying the original base calculator. Business rules (single-use validation, deduction caps against accumulated salary) are encapsulated in [`SalaryEnhancementPipeline`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/SalaryEnhancementPipeline.java):
 
 ```java
 // 1. Initialize Pipeline via PayrollService
 SalaryEnhancementPipeline pipeline = payrollService.createSalaryEnhancementPipeline(new BigDecimal("50000.00"));
 
-// 2. Apply decorators using type-safe enum (single-use enforced)
-pipeline.applyDecorator(DecoratorType.HRA);                    // +20% base ($10,000.00)
-pipeline.applyDecorator(DecoratorType.TRANSPORT_ALLOWANCE);    // +$1,600.00
-pipeline.applyDecorator(DecoratorType.PERFORMANCE_BONUS);      // +10% base ($5,000.00)
-pipeline.applyDecorator(DecoratorType.INSURANCE_DEDUCTION);    // -$150.00
+// 2. Fluently apply decorators using type-safe enum (single-use enforced)
+pipeline.applyDecorator(DecoratorType.HRA)                   // +20% base ($10,000.00)
+        .applyDecorator(DecoratorType.TRANSPORT_ALLOWANCE)   // +$1,600.00
+        .applyDecorator(DecoratorType.PERFORMANCE_BONUS)     // +10% base ($5,000.00)
+        .applyDecorator(DecoratorType.INSURANCE_DEDUCTION);  // -$150.00
 
-BigDecimal net = pipeline.getCurrentSalary();                  // $66,450.00
+BigDecimal net = pipeline.getCurrentSalary();                 // $66,450.00
 String details = pipeline.getCurrentDescription();
 // "Base Salary (50000.00) + HRA (10000.00) + Transport Allowance (1600.00) + Performance Bonus (5000.00) - Insurance Deduction (150.00)"
 ```

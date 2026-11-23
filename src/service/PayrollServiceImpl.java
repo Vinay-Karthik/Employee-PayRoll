@@ -4,8 +4,6 @@ import calculator.SalaryCalculator;
 import calculator.SalaryCalculatorFactory;
 import decorator.DecoratorType;
 import decorator.SalaryEnhancementPipeline;
-import integration.EmployeeDirectory;
-import integration.RepositoryEmployeeDirectory;
 import model.Employee;
 import model.EmployeeType;
 import model.FullTimeEmployee;
@@ -29,10 +27,10 @@ import java.util.function.Function;
 
 /**
  * Concrete implementation of PayrollService.
- * Coordinates employee directory, domain calculations, and report generation.
+ * Coordinates employee repository, domain calculations, and report generation.
  */
 public class PayrollServiceImpl implements PayrollService {
-    private final EmployeeDirectory employeeDirectory;
+    private final EmployeeRepository employeeRepository;
     private final ReportExporter reportExporter;
     private final Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver;
     private final String currency;
@@ -42,66 +40,58 @@ public class PayrollServiceImpl implements PayrollService {
      * Primary constructor injecting dependencies via constructor injection.
      * Configuration parameters (currency, financialYear) are injected directly.
      */
-    public PayrollServiceImpl(EmployeeDirectory employeeDirectory,
+    public PayrollServiceImpl(EmployeeRepository employeeRepository,
                               ReportExporter reportExporter,
                               Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver,
                               String currency,
                               String financialYear) {
-        this.employeeDirectory = Objects.requireNonNull(employeeDirectory, "EmployeeDirectory must not be null");
+        this.employeeRepository = Objects.requireNonNull(employeeRepository, "EmployeeRepository must not be null");
         this.reportExporter = Objects.requireNonNull(reportExporter, "Report exporter must not be null");
         this.salaryCalculatorFactoryResolver = Objects.requireNonNull(salaryCalculatorFactoryResolver, "Factory resolver must not be null");
         this.currency = (currency != null && !currency.isBlank()) ? currency : "USD";
         this.financialYear = (financialYear != null && !financialYear.isBlank()) ? financialYear : "FY2025-26";
     }
 
-    public PayrollServiceImpl(EmployeeDirectory employeeDirectory,
+    public PayrollServiceImpl(EmployeeRepository employeeRepository,
                               ReportExporter reportExporter,
                               Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver) {
-        this(employeeDirectory, reportExporter, salaryCalculatorFactoryResolver, "USD", "FY2025-26");
+        this(employeeRepository, reportExporter, salaryCalculatorFactoryResolver, "USD", "FY2025-26");
     }
 
-    public PayrollServiceImpl(EmployeeDirectory employeeDirectory,
+    public PayrollServiceImpl(EmployeeRepository employeeRepository,
                               ReportExporter reportExporter) {
-        this(employeeDirectory, reportExporter, SalaryCalculatorFactory::forType, "USD", "FY2025-26");
-    }
-
-    /**
-     * Convenience constructor for backward compatibility.
-     * Uses RepositoryEmployeeDirectory as default adapter for EmployeeRepository.
-     */
-    public PayrollServiceImpl(EmployeeRepository repository, ReportExporter reportExporter) {
-        this(new RepositoryEmployeeDirectory(repository), reportExporter);
+        this(employeeRepository, reportExporter, SalaryCalculatorFactory::forType, "USD", "FY2025-26");
     }
 
     @Override
     public List<Employee> getAllEmployees() {
-        return employeeDirectory.findAllEmployees();
+        return employeeRepository.findAll();
     }
 
     @Override
     public Optional<Employee> getEmployeeById(int id) {
-        return employeeDirectory.findEmployeeById(id);
+        return employeeRepository.findById(id);
     }
 
     @Override
     public void registerEmployee(Employee employee) {
         Objects.requireNonNull(employee, "Employee cannot be null");
-        employeeDirectory.saveEmployee(employee);
+        employeeRepository.save(employee);
     }
 
     @Override
     public boolean removeEmployee(int id) {
-        return employeeDirectory.deleteEmployee(id);
+        return employeeRepository.deleteById(id);
     }
 
     @Override
     public Optional<PaySlip> processEmployeePaySlip(int id) {
-        return employeeDirectory.findEmployeeById(id).map(Employee::generatePaySlip);
+        return employeeRepository.findById(id).map(Employee::generatePaySlip);
     }
 
     @Override
     public List<PaySlip> processAllPaySlips() {
-        return employeeDirectory.findAllEmployees().stream()
+        return employeeRepository.findAll().stream()
                 .map(Employee::generatePaySlip)
                 .toList();
     }
@@ -213,7 +203,7 @@ public class PayrollServiceImpl implements PayrollService {
      */
     @Override
     public Optional<PaySlip> generateEnhancedPaySlip(int employeeId, DecoratorType... decoratorTypes) {
-        return employeeDirectory.findEmployeeById(employeeId).map(employee -> {
+        return employeeRepository.findById(employeeId).map(employee -> {
             // Initialize pipeline with employee's base salary
             BigDecimal baseSalary = extractBaseSalary(employee);
             SalaryEnhancementPipeline pipeline = new SalaryEnhancementPipeline(baseSalary);
@@ -260,7 +250,7 @@ public class PayrollServiceImpl implements PayrollService {
      */
     @Override
     public Optional<PaySlip> generateEnhancedPaySlip(int employeeId, java.util.Map<DecoratorType, BigDecimal> decoratorCustomAmounts) {
-        return employeeDirectory.findEmployeeById(employeeId).map(employee -> {
+        return employeeRepository.findById(employeeId).map(employee -> {
             BigDecimal baseSalary = extractBaseSalary(employee);
             SalaryEnhancementPipeline pipeline = new SalaryEnhancementPipeline(baseSalary);
 

@@ -1,9 +1,8 @@
 import calculator.SalaryCalculatorFactory;
-import integration.EmployeeDirectory;
-import integration.ExternalHRAdapter;
-import integration.ExternalHRService;
 import report.FileReportExporter;
 import report.ReportExporter;
+import repository.EmployeeRepository;
+import repository.InMemoryEmployeeRepository;
 import service.PayrollFacade;
 import service.PayrollService;
 import service.PayrollServiceImpl;
@@ -16,8 +15,9 @@ import java.util.Scanner;
  * Application Entry Point / Composition Root.
  *
  * Professional Architecture & Design Patterns:
+ * - Repository Pattern (repository): InMemoryEmployeeRepository provides clean domain employee storage.
  * - Adapter Pattern (integration): ExternalHRAdapter adapts third-party ExternalHRService
- *   to the EmployeeDirectory target interface, injected into PayrollServiceImpl.
+ *   to EmployeeRepository as a standalone integration demonstration.
  * - Factory Method Pattern (calculator): SalaryCalculatorFactory creators for salary calculation.
  * - Strategy Pattern (tax): TaxPolicy and DeductionPolicy for category-specific tax and deduction calculation.
  * - Builder Pattern (model): Validated immutable PayrollRequest construction.
@@ -32,16 +32,12 @@ public class PayrollSystem {
         // Core reporting dependency
         ReportExporter reportExporter = new FileReportExporter();
 
-        // 1. Adapter Pattern Setup:
-        // ExternalHRService is the Adaptee (simulating a third-party HR API)
-        ExternalHRService externalHRService = new ExternalHRService();
+        // 1. Employee Repository Setup (Domain storage decoupled from external systems):
+        EmployeeRepository employeeRepository = new InMemoryEmployeeRepository();
 
-        // ExternalHRAdapter implements the EmployeeDirectory Target interface
-        EmployeeDirectory employeeDirectory = new ExternalHRAdapter(externalHRService);
-
-        // 2. Inject EmployeeDirectory and configuration into PayrollService via Constructor Injection
+        // 2. Inject EmployeeRepository and configuration into PayrollService via Constructor Injection
         PayrollService payrollService = new PayrollServiceImpl(
-                employeeDirectory,
+                employeeRepository,
                 reportExporter,
                 SalaryCalculatorFactory::forType,
                 DEFAULT_CURRENCY,

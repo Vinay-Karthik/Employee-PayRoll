@@ -3,6 +3,7 @@ package service;
 import model.Employee;
 import model.PaySlip;
 import report.ReportExporter;
+import repository.EmployeeRepository;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ import java.util.logging.Logger;
  *   <li>Report export to configured destination</li>
  * </ol>
  *
- * <p>Business logic remains in the domain services ({@link PayrollService}, {@link EmployeeDirectory},
+ * <p>Business logic remains in the domain services ({@link PayrollService}, {@link EmployeeRepository},
  * {@link ReportExporter}). This facade only orchestrates the workflow and handles cross-cutting
  * concerns like error aggregation.
  *

@@ -1,6 +1,7 @@
 package integration;
 
 import model.*;
+import repository.EmployeeRepository;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -9,9 +10,14 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Adapter Pattern: Adapts {@link ExternalHRService} to the domain {@link EmployeeDirectory}.
+ * Adapter Pattern: Adapts third-party {@link ExternalHRService} (Adaptee)
+ * to the domain {@link EmployeeRepository} (Target interface).
+ * <p>
+ * Maintained as a clean Adapter demonstration showing integration
+ * with an incompatible external system while keeping it separated
+ * from the main payroll workflow.
  */
-public class ExternalHRAdapter implements EmployeeDirectory {
+public class ExternalHRAdapter implements EmployeeRepository {
     private final ExternalHRService hrService;
 
     public ExternalHRAdapter(ExternalHRService hrService) {
@@ -19,7 +25,7 @@ public class ExternalHRAdapter implements EmployeeDirectory {
     }
 
     @Override
-    public Optional<Employee> findEmployeeById(int id) {
+    public Optional<Employee> findById(int id) {
         if (id <= 0) {
             return Optional.empty();
         }
@@ -32,17 +38,17 @@ public class ExternalHRAdapter implements EmployeeDirectory {
         } catch (ExternalEmployeeNotFoundException e) {
             return Optional.empty();
         } catch (ExternalServiceException e) {
-            throw new EmployeeDirectoryException("External HR service failure while retrieving employee ID " + id, e);
+            throw new RuntimeException("External HR service failure while retrieving employee ID " + id, e);
         }
     }
 
     @Override
-    public List<Employee> findAllEmployees() {
+    public List<Employee> findAll() {
         List<HRRecord> rawRecords;
         try {
             rawRecords = hrService.getAllEmployees();
         } catch (ExternalServiceException e) {
-            throw new EmployeeDirectoryException("External HR service failure while fetching employee listing", e);
+            throw new RuntimeException("External HR service failure while fetching employee listing", e);
         }
 
         List<Employee> validEmployees = new ArrayList<>();
@@ -64,18 +70,35 @@ public class ExternalHRAdapter implements EmployeeDirectory {
     }
 
     @Override
-    public void saveEmployee(Employee employee) {
+    public void save(Employee employee) {
         Objects.requireNonNull(employee, "Employee cannot be null");
         HRRecord record = mapToHRRecord(employee);
         hrService.saveExternalRecord(record);
     }
 
     @Override
-    public boolean deleteEmployee(int id) {
+    public boolean deleteById(int id) {
         if (id <= 0) {
             return false;
         }
         return hrService.deleteExternalRecord("HR-" + id);
+    }
+
+    // Convenience aliases for compatibility
+    public Optional<Employee> findEmployeeById(int id) {
+        return findById(id);
+    }
+
+    public List<Employee> findAllEmployees() {
+        return findAll();
+    }
+
+    public void saveEmployee(Employee employee) {
+        save(employee);
+    }
+
+    public boolean deleteEmployee(int id) {
+        return deleteById(id);
     }
 
     private Employee mapToEmployee(HRRecord record) {
@@ -156,5 +179,22 @@ public class ExternalHRAdapter implements EmployeeDirectory {
             throw new IllegalArgumentException("Invalid external ID format: " + externalId);
         }
         return Integer.parseInt(externalId.substring(3));
+    }
+
+    /**
+     * Standalone demonstration of the Adapter Pattern:
+     * Verifies that ExternalHRAdapter adapts third-party ExternalHRService
+     * to the standard EmployeeRepository contract.
+     */
+    public static void main(String[] args) {
+        ExternalHRService externalHRService = new ExternalHRService();
+        EmployeeRepository adapter = new ExternalHRAdapter(externalHRService);
+
+        System.out.println("=== External HR Adapter Demonstration ===");
+        for (Employee emp : adapter.findAll()) {
+            System.out.printf("  [%d] %s | %s | %s | %s%n",
+                    emp.getId(), emp.getName(), emp.getDepartment(),
+                    emp.getRoleCategory(), emp.getPayDetailsSummary());
+        }
     }
 }

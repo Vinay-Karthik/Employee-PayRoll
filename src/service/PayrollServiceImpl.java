@@ -2,7 +2,6 @@ package service;
 
 import calculator.SalaryCalculator;
 import calculator.SalaryCalculatorFactory;
-import config.PayrollConfig;
 import decorator.DecoratorType;
 import decorator.SalaryEnhancementPipeline;
 import integration.EmployeeDirectory;
@@ -36,22 +35,34 @@ public class PayrollServiceImpl implements PayrollService {
     private final EmployeeDirectory employeeDirectory;
     private final ReportExporter reportExporter;
     private final Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver;
+    private final String currency;
+    private final String financialYear;
 
     /**
-     * Primary constructor injecting EmployeeDirectory via constructor injection (Adapter Pattern).
-     * EmployeeDirectory is the single authoritative persistence abstraction (it adapts EmployeeRepository).
+     * Primary constructor injecting dependencies via constructor injection.
+     * Configuration parameters (currency, financialYear) are injected directly.
      */
     public PayrollServiceImpl(EmployeeDirectory employeeDirectory,
                               ReportExporter reportExporter,
-                              Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver) {
+                              Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver,
+                              String currency,
+                              String financialYear) {
         this.employeeDirectory = Objects.requireNonNull(employeeDirectory, "EmployeeDirectory must not be null");
         this.reportExporter = Objects.requireNonNull(reportExporter, "Report exporter must not be null");
         this.salaryCalculatorFactoryResolver = Objects.requireNonNull(salaryCalculatorFactoryResolver, "Factory resolver must not be null");
+        this.currency = (currency != null && !currency.isBlank()) ? currency : "USD";
+        this.financialYear = (financialYear != null && !financialYear.isBlank()) ? financialYear : "FY2025-26";
+    }
+
+    public PayrollServiceImpl(EmployeeDirectory employeeDirectory,
+                              ReportExporter reportExporter,
+                              Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver) {
+        this(employeeDirectory, reportExporter, salaryCalculatorFactoryResolver, "USD", "FY2025-26");
     }
 
     public PayrollServiceImpl(EmployeeDirectory employeeDirectory,
                               ReportExporter reportExporter) {
-        this(employeeDirectory, reportExporter, SalaryCalculatorFactory::forType);
+        this(employeeDirectory, reportExporter, SalaryCalculatorFactory::forType, "USD", "FY2025-26");
     }
 
     /**
@@ -101,7 +112,7 @@ public class PayrollServiceImpl implements PayrollService {
 
         String effectiveFinancialYear = (request.getFinancialYear() != null && !request.getFinancialYear().isBlank())
                 ? request.getFinancialYear()
-                : PayrollConfig.getInstance().getFinancialYear();
+                : this.financialYear;
 
         SalaryCalculatorFactory creator = salaryCalculatorFactoryResolver.apply(request.getEmployeeType());
         SalaryCalculator salaryCalculator = creator.createCalculator();
@@ -138,16 +149,13 @@ public class PayrollServiceImpl implements PayrollService {
 
     @Override
     public String generatePayrollSummaryReport(List<PaySlip> paySlips) {
-        PayrollConfig config = PayrollConfig.getInstance();
-        String currency = config.getCurrency();
-
         String reportFinancialYear = paySlips.stream()
                 .map(PaySlip::financialYear)
                 .filter(Objects::nonNull)
                 .filter(s -> !s.isBlank())
                 .distinct()
                 .reduce((a, b) -> a + ", " + b)
-                .orElse(config.getFinancialYear());
+                .orElse(this.financialYear);
 
         BigDecimal totalGross = BigDecimal.ZERO;
         BigDecimal totalTax = BigDecimal.ZERO;
@@ -236,7 +244,7 @@ public class PayrollServiceImpl implements PayrollService {
                     employee.getRoleCategory(),
                     employee.getBankAccountNumber(),
                     gross, tax, deductions, net,
-                    PayrollConfig.getInstance().getFinancialYear(),
+                    this.financialYear,
                     pipeline.getCurrentDescription()
             );
         });
@@ -280,7 +288,7 @@ public class PayrollServiceImpl implements PayrollService {
                     employee.getRoleCategory(),
                     employee.getBankAccountNumber(),
                     gross, tax, deductions, net,
-                    PayrollConfig.getInstance().getFinancialYear(),
+                    this.financialYear,
                     pipeline.getCurrentDescription()
             );
         });

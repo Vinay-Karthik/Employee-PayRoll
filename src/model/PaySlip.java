@@ -1,7 +1,5 @@
 package model;
 
-import config.PayrollConfig;
-
 import java.math.BigDecimal;
 
 /**
@@ -24,25 +22,27 @@ public record PaySlip(
         String financialYear,
         String bonusDetails
 ) {
+    public static final String DEFAULT_FINANCIAL_YEAR = "FY2025-26";
+
     public PaySlip {
         if (employeeName == null || employeeName.isBlank()) {
             throw new IllegalArgumentException("Employee name cannot be null or blank");
         }
         if (financialYear == null || financialYear.isBlank()) {
-            financialYear = PayrollConfig.getInstance().getFinancialYear();
+            financialYear = DEFAULT_FINANCIAL_YEAR;
         }
     }
 
     /**
      * Overloaded constructor for backward compatibility.
-     * Uses singleton default financial year and null bonusDetails.
+     * Uses default financial year and null bonusDetails.
      */
     public PaySlip(int employeeId, String employeeName, String department, String roleCategory,
                    String bankAccountNumber, BigDecimal grossPay, BigDecimal taxWithholding,
                    BigDecimal deductions, BigDecimal netPay) {
         this(employeeId, employeeName, department, roleCategory, bankAccountNumber,
                 grossPay, taxWithholding, deductions, netPay,
-                PayrollConfig.getInstance().getFinancialYear(), null);
+                DEFAULT_FINANCIAL_YEAR, null);
     }
 
     /**

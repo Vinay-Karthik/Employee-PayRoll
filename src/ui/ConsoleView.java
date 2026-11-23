@@ -1,6 +1,5 @@
 package ui;
 
-import config.PayrollConfig;
 import model.Employee;
 import model.PaySlip;
 
@@ -9,10 +8,19 @@ import java.util.List;
 /**
  * Single Responsibility: Dedicated to console rendering and formatting.
  * Does not handle domain logic or direct user input parsing.
+ * Uses constructor injection for configurable display currency.
  */
 public class ConsoleView {
 
-    private final String currency = PayrollConfig.getInstance().getCurrency();
+    private final String currency;
+
+    public ConsoleView() {
+        this("USD");
+    }
+
+    public ConsoleView(String currency) {
+        this.currency = (currency != null && !currency.isBlank()) ? currency : "USD";
+    }
 
     public String getCurrency() {
         return currency;

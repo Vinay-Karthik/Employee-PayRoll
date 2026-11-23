@@ -11,8 +11,6 @@ Packages are organized by **business domain and architectural responsibility** r
 ```
 Employee-PayRoll/
 ├── src/
-│   ├── config/                        # System configuration & environment settings
-│   │   └── PayrollConfig.java         # Singleton configuration provider (currency, FY, regime)
 │   ├── model/                         # Domain entities, value objects & request models
 │   │   ├── Employee.java              # Abstract base domain employee
 │   │   ├── FullTimeEmployee.java      # Salaried full-time employee
@@ -93,7 +91,6 @@ Employee-PayRoll/
 | **Strategy** | `tax` | [`TaxPolicy`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/tax/TaxPolicy.java), [`DeductionPolicy`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/tax/DeductionPolicy.java), `FullTimeTaxPolicy`, `PartTimeTaxPolicy`, etc. | Encapsulates tax and deduction algorithms per employee category, allowing seamless reuse across standard, enhanced, and request payroll flows. |
 | **Adapter** | `integration` | [`ExternalHRAdapter`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/ExternalHRAdapter.java), [`EmployeeDirectory`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/EmployeeDirectory.java) | Converts third-party [`HRRecord`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/HRRecord.java) from [`ExternalHRService`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/ExternalHRService.java) into domain `Employee` models. |
 | **Builder** | `model` | [`PayrollRequest.Builder`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/PayrollRequest.java) | Validates and constructs immutable, defensive-copied payroll calculation requests. |
-| **Singleton** | `config` | [`PayrollConfig`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/config/PayrollConfig.java) | Thread-safe enum singleton providing global default currency, FY, and tax regime. |
 
 ---
 

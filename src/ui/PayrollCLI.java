@@ -1,6 +1,5 @@
 package ui;
 
-import config.PayrollConfig;
 import decorator.DecoratorType;
 import decorator.SalaryEnhancementPipeline;
 import model.*;
@@ -26,14 +25,23 @@ public class PayrollCLI {
     private final ConsoleView view;
     private final Scanner scanner;
     private final String reportFilePath;
+    private final String defaultFinancialYear;
 
     public PayrollCLI(PayrollFacade payrollFacade, PayrollService payrollService,
-                      ConsoleView view, Scanner scanner, String reportFilePath) {
+                      ConsoleView view, Scanner scanner, String reportFilePath,
+                      String defaultFinancialYear) {
         this.payrollFacade = Objects.requireNonNull(payrollFacade, "PayrollFacade must not be null");
         this.payrollService = Objects.requireNonNull(payrollService, "PayrollService must not be null");
         this.view = Objects.requireNonNull(view, "ConsoleView must not be null");
         this.scanner = Objects.requireNonNull(scanner, "Scanner must not be null");
         this.reportFilePath = Objects.requireNonNull(reportFilePath, "Report file path must not be null");
+        this.defaultFinancialYear = (defaultFinancialYear != null && !defaultFinancialYear.isBlank())
+                ? defaultFinancialYear : "FY2025-26";
+    }
+
+    public PayrollCLI(PayrollFacade payrollFacade, PayrollService payrollService,
+                      ConsoleView view, Scanner scanner, String reportFilePath) {
+        this(payrollFacade, payrollService, view, scanner, reportFilePath, "FY2025-26");
     }
 
     public void start() {
@@ -294,14 +302,13 @@ public class PayrollCLI {
                 requestBuilder.bankAccountNumber(account);
             }
 
-            PayrollConfig config = PayrollConfig.getInstance();
-            System.out.print("Enter Financial Year [" + config.getFinancialYear() + "]: ");
+            System.out.print("Enter Financial Year [" + defaultFinancialYear + "]: ");
             String fy = scanner.nextLine().trim();
-            requestBuilder.financialYear(fy.isEmpty() ? config.getFinancialYear() : fy);
+            requestBuilder.financialYear(fy.isEmpty() ? defaultFinancialYear : fy);
 
-            System.out.print("Enter Tax Regime (1=OLD, 2=NEW) [" + config.getDefaultTaxRegime() + "]: ");
+            System.out.print("Enter Tax Regime (1=OLD, 2=NEW) [NEW]: ");
             String regimeInput = scanner.nextLine().trim();
-            TaxRegime regime = config.getDefaultTaxRegime();
+            TaxRegime regime = TaxRegime.NEW;
             if (regimeInput.equals("1")) {
                 regime = TaxRegime.OLD;
             } else if (regimeInput.equals("2")) {

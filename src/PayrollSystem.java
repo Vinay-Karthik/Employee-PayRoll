@@ -21,11 +21,12 @@ import java.util.Scanner;
  * - Factory Method Pattern (calculator): SalaryCalculatorFactory creators for salary calculation.
  * - Strategy Pattern (tax): TaxPolicy and DeductionPolicy for category-specific tax and deduction calculation.
  * - Builder Pattern (model): Validated immutable PayrollRequest construction.
- * - Singleton Pattern (config): Shared configuration provider.
  * - Facade Pattern (service): PayrollFacade orchestrates the monthly payroll workflow.
  */
 public class PayrollSystem {
     private static final String DEFAULT_REPORT_FILE = "payroll_summary_report.txt";
+    private static final String DEFAULT_CURRENCY = "USD";
+    private static final String DEFAULT_FINANCIAL_YEAR = "FY2025-26";
 
     public static void main(String[] args) {
         // Core reporting dependency
@@ -38,20 +39,22 @@ public class PayrollSystem {
         // ExternalHRAdapter implements the EmployeeDirectory Target interface
         EmployeeDirectory employeeDirectory = new ExternalHRAdapter(externalHRService);
 
-        // 2. Inject EmployeeDirectory into PayrollService via Constructor Injection
+        // 2. Inject EmployeeDirectory and configuration into PayrollService via Constructor Injection
         PayrollService payrollService = new PayrollServiceImpl(
                 employeeDirectory,
                 reportExporter,
-                SalaryCalculatorFactory::forType
+                SalaryCalculatorFactory::forType,
+                DEFAULT_CURRENCY,
+                DEFAULT_FINANCIAL_YEAR
         );
 
         // 3. Create Facade for orchestrating monthly payroll workflow
         PayrollFacade payrollFacade = new PayrollFacade(payrollService, reportExporter);
 
-        ConsoleView view = new ConsoleView();
+        ConsoleView view = new ConsoleView(DEFAULT_CURRENCY);
         Scanner scanner = new Scanner(System.in);
 
-        PayrollCLI cli = new PayrollCLI(payrollFacade, payrollService, view, scanner, DEFAULT_REPORT_FILE);
+        PayrollCLI cli = new PayrollCLI(payrollFacade, payrollService, view, scanner, DEFAULT_REPORT_FILE, DEFAULT_FINANCIAL_YEAR);
 
         // Start Application
         try {

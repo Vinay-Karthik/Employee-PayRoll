@@ -20,6 +20,12 @@ import java.util.Scanner;
  * Keeps business rules strictly outside this presentation controller.
  */
 public class PayrollCLI {
+    private static final List<EmployeeFactory> EMPLOYEE_FACTORIES = List.of(
+            new FullTimeEmployeeFactory(),
+            new PartTimeEmployeeFactory(),
+            new ContractorEmployeeFactory(),
+            new InternEmployeeFactory());
+
     private final PayrollFacade payrollFacade;
     private final PayrollService payrollService;
     private final ConsoleView view;
@@ -107,40 +113,14 @@ public class PayrollCLI {
             System.out.print("Enter Bank Account Number: ");
             String account = scanner.nextLine().trim();
 
-            System.out.print("Enter Role Type (1=Full-Time, 2=Part-Time, 3=Contractor, 4=Intern): ");
+            System.out.print("Enter Role Type (" + employeeTypeOptions() + "): ");
             int type = Integer.parseInt(scanner.nextLine().trim());
+            EmployeeFactory factory = factoryFor(type);
 
             TaxRegime taxRegime = promptTaxRegime();
 
-            Employee newEmployee = switch (type) {
-                case 1 -> {
-                    System.out.print("Enter Monthly Base Salary: ");
-                    BigDecimal salary = parseAmount(scanner.nextLine());
-                    System.out.print("Enter Monthly Bonus: ");
-                    BigDecimal bonus = parseAmount(scanner.nextLine());
-                    yield new FullTimeEmployee(id, name, email, dept, account, salary, bonus, taxRegime);
-                }
-                case 2 -> {
-                    System.out.print("Enter Hourly Rate: ");
-                    BigDecimal rate = parseAmount(scanner.nextLine());
-                    System.out.print("Enter Hours Worked this month: ");
-                    BigDecimal hours = parseAmount(scanner.nextLine());
-                    yield new PartTimeEmployee(id, name, email, dept, account, rate, hours, taxRegime);
-                }
-                case 3 -> {
-                    System.out.print("Enter Contractor Hourly Rate: ");
-                    BigDecimal rate = parseAmount(scanner.nextLine());
-                    System.out.print("Enter Billed Hours: ");
-                    BigDecimal hours = parseAmount(scanner.nextLine());
-                    yield new ContractorEmployee(id, name, email, dept, account, rate, hours, taxRegime);
-                }
-                case 4 -> {
-                    System.out.print("Enter Intern Monthly Stipend: ");
-                    BigDecimal stipend = parseAmount(scanner.nextLine());
-                    yield new InternEmployee(id, name, email, dept, account, stipend, taxRegime);
-                }
-                default -> throw new IllegalArgumentException("Unknown employee role type: " + type);
-            };
+            Employee newEmployee = factory.create(scanner,
+                    new EmployeeDetails(id, name, email, dept, account, taxRegime));
 
             payrollService.registerEmployee(newEmployee);
             view.displayMessage("Employee " + name + " (ID: " + id + ") registered successfully!");
@@ -205,47 +185,13 @@ public class PayrollCLI {
      */
     private void handlePayrollRequest() {
         try {
-            System.out.print("Enter Role Type (1=Full-Time, 2=Part-Time, 3=Contractor, 4=Intern): ");
+            System.out.print("Enter Role Type (" + employeeTypeOptions() + "): ");
             int typeChoice = Integer.parseInt(scanner.nextLine().trim());
-            EmployeeType employeeType = switch (typeChoice) {
-                case 1 -> EmployeeType.FULL_TIME;
-                case 2 -> EmployeeType.PART_TIME;
-                case 3 -> EmployeeType.CONTRACTOR;
-                case 4 -> EmployeeType.INTERN;
-                default -> throw new IllegalArgumentException("Invalid employee type selection: " + typeChoice);
-            };
+            EmployeeFactory factory = factoryFor(typeChoice);
+            EmployeeType employeeType = factory.type();
 
             SalaryComponents components = new SalaryComponents();
-            switch (employeeType) {
-                case FULL_TIME -> {
-                    System.out.print("Enter Monthly Base Salary: ");
-                    components.setBasic(parseAmount(scanner.nextLine()));
-                    System.out.print("Enter Monthly Bonus: ");
-                    components.setBonus(parseAmount(scanner.nextLine()));
-                }
-                case PART_TIME -> {
-                    System.out.print("Enter Hourly Rate: ");
-                    components.setHourlyRate(parseAmount(scanner.nextLine()));
-                    System.out.print("Enter Hours Worked this month: ");
-                    components.setHoursWorked(parseAmount(scanner.nextLine()));
-                }
-                case CONTRACTOR -> {
-                    System.out.print("Enter Contractor Hourly Rate / Fixed Amount: ");
-                    BigDecimal amount = parseAmount(scanner.nextLine());
-                    System.out.print("Enter Billed Hours (or 0 for fixed contract): ");
-                    BigDecimal hours = parseAmount(scanner.nextLine());
-                    if (hours.signum() > 0) {
-                        components.setHourlyRate(amount);
-                        components.setHoursWorked(hours);
-                    } else {
-                        components.setFixedContractAmount(amount);
-                    }
-                }
-                case INTERN -> {
-                    System.out.print("Enter Intern Monthly Stipend: ");
-                    components.setStipend(parseAmount(scanner.nextLine()));
-                }
-            }
+            factory.fillSalaryComponents(scanner, components);
 
             System.out.print("Enter bonus description / details (optional, press Enter to skip): ");
             String bonusInput = scanner.nextLine().trim();
@@ -367,6 +313,24 @@ public class PayrollCLI {
         }
     }
 
+    private static String employeeTypeOptions() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < EMPLOYEE_FACTORIES.size(); i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append(i + 1).append("=").append(EMPLOYEE_FACTORIES.get(i).type().getDisplayName());
+        }
+        return sb.toString();
+    }
+
+    private static EmployeeFactory factoryFor(int choice) {
+        if (choice < 1 || choice > EMPLOYEE_FACTORIES.size()) {
+            throw new IllegalArgumentException("Unknown employee role type: " + choice);
+        }
+        return EMPLOYEE_FACTORIES.get(choice - 1);
+    }
+
     private TaxRegime promptTaxRegime() {
         while (true) {
             System.out.print("Enter Tax Regime (1=OLD, 2=NEW) [NEW]: ");
@@ -418,7 +382,7 @@ public class PayrollCLI {
         return input;
     }
 
-    private static BigDecimal parseAmount(String input) {
+    static BigDecimal parseAmount(String input) {
         try {
             return new BigDecimal(input.trim());
         } catch (NumberFormatException e) {

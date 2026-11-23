@@ -1,5 +1,7 @@
 package model;
 
+import calculator.SalaryCalculatorFactory;
+import model.SalaryComponents;
 import tax.DeductionPolicy;
 import tax.TaxPolicy;
 import tax.TaxRegime;
@@ -12,6 +14,9 @@ import java.math.BigDecimal;
  * <p>
  * Tax and deduction rules are delegated to {@link tax.InternTaxPolicy}
  * and {@link tax.InternDeductionPolicy} for reuse across calculation paths.
+ * <p>
+ * Gross salary calculation is delegated to {@link calculator.InternSalaryCalculator}
+ * via {@link SalaryCalculatorFactory} to ensure a single source of truth.
  */
 public class InternEmployee extends Employee {
 
@@ -42,7 +47,9 @@ public class InternEmployee extends Employee {
 
     @Override
     public BigDecimal calculateGrossPay() {
-        return stipend;
+        SalaryComponents components = new SalaryComponents();
+        components.setStipend(stipend);
+        return SalaryCalculatorFactory.create(getEmployeeType()).calculateGross(components);
     }
 
     @Override

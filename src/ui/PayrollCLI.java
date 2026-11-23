@@ -222,8 +222,6 @@ public class PayrollCLI {
                     components.setBasic(parseAmount(scanner.nextLine()));
                     System.out.print("Enter Monthly Bonus: ");
                     components.setBonus(parseAmount(scanner.nextLine()));
-                    System.out.print("Enter Allowances (Enter 0 if none): ");
-                    components.setAllowances(parseAmount(scanner.nextLine()));
                 }
                 case PART_TIME -> {
                     System.out.print("Enter Hourly Rate: ");

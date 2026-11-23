@@ -1,5 +1,7 @@
 package model;
 
+import calculator.SalaryCalculatorFactory;
+import model.SalaryComponents;
 import tax.DeductionPolicy;
 import tax.TaxPolicy;
 import tax.TaxRegime;
@@ -12,6 +14,9 @@ import java.math.BigDecimal;
  * <p>
  * Tax and deduction rules are delegated to {@link tax.FullTimeTaxPolicy}
  * and {@link tax.FullTimeDeductionPolicy} for reuse across calculation paths.
+ * <p>
+ * Gross salary calculation is delegated to {@link calculator.FullTimeSalaryCalculator}
+ * via {@link SalaryCalculatorFactory} to ensure a single source of truth.
  */
 public class FullTimeEmployee extends Employee {
 
@@ -60,7 +65,10 @@ public class FullTimeEmployee extends Employee {
 
     @Override
     public BigDecimal calculateGrossPay() {
-        return baseSalary.add(bonus);
+        SalaryComponents components = new SalaryComponents();
+        components.setBasic(baseSalary);
+        components.setBonus(bonus);
+        return SalaryCalculatorFactory.create(getEmployeeType()).calculateGross(components);
     }
 
     @Override

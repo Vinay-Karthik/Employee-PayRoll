@@ -220,7 +220,7 @@ public class PayrollCLI {
     /**
      * Creational-pattern flow:
      * Builder (construct PayrollRequest) -> service processes it via
-     * Factory Method + Abstract Factory -> PaySlip.
+     * Factory Method + Strategy -> PaySlip.
      */
     private void handlePayrollRequest() {
         try {

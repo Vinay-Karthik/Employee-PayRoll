@@ -44,17 +44,18 @@ Employee-PayRoll/
 │   │   ├── InsuranceDeductionDecorator.java # Insurance deduction decorator
 │   │   ├── DecoratorType.java         # Type-safe enum for enhancement components
 │   │   └── SalaryEnhancementPipeline.java # Domain pipeline managing stacking & business rules
-│   ├── tax/                           # Tax regime families (Abstract Factory Pattern)
-│   │   ├── TaxRegime.java             # OLD vs NEW regime enum
-│   │   ├── TaxCalculator.java         # Tax component interface
-│   │   ├── DeductionCalculator.java   # Deduction component interface
-│   │   ├── PayrollComponentFactory.java# Abstract Factory for tax/deduction families
-│   │   ├── OldTaxRegimeFactory.java   # Concrete factory for Old Regime
-│   │   ├── OldTaxCalculator.java
-│   │   ├── OldDeductionCalculator.java
-│   │   ├── NewTaxRegimeFactory.java   # Concrete factory for New Regime
-│   │   ├── NewTaxCalculator.java
-│   │   └── NewDeductionCalculator.java
+│   ├── tax/                           # Tax and deduction policies (Strategy Pattern)
+│   │   ├── TaxPolicy.java             # Tax calculation strategy interface
+│   │   ├── DeductionPolicy.java       # Deduction calculation strategy interface
+│   │   ├── FullTimeTaxPolicy.java     # Full-time tax calculation strategy
+│   │   ├── FullTimeDeductionPolicy.java# Full-time deduction calculation strategy
+│   │   ├── PartTimeTaxPolicy.java     # Part-time tax calculation strategy
+│   │   ├── PartTimeDeductionPolicy.java# Part-time deduction calculation strategy
+│   │   ├── ContractorTaxPolicy.java   # Contractor tax calculation strategy
+│   │   ├── ContractorDeductionPolicy.java# Contractor deduction calculation strategy
+│   │   ├── InternTaxPolicy.java       # Intern tax calculation strategy
+│   │   ├── InternDeductionPolicy.java # Intern deduction calculation strategy
+│   │   └── TaxRegime.java             # Tax regime enum
 │   ├── integration/                   # External systems integration (Adapter Pattern)
 │   │   ├── EmployeeDirectory.java     # Target interface for employee discovery/persistence
 │   │   ├── RepositoryEmployeeDirectory.java # Alternate implementation backed by local repository
@@ -89,7 +90,7 @@ Employee-PayRoll/
 | :--- | :--- | :--- | :--- |
 | **Decorator** | `decorator` | [`SalaryCalculator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/SalaryCalculator.java), [`BaseSalaryCalculator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/BaseSalaryCalculator.java), [`HraDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/HraDecorator.java), [`TransportAllowanceDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/TransportAllowanceDecorator.java), [`PerformanceBonusDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/PerformanceBonusDecorator.java), [`InsuranceDeductionDecorator`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/InsuranceDeductionDecorator.java), [`SalaryEnhancementPipeline`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/SalaryEnhancementPipeline.java), [`DecoratorType`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/decorator/DecoratorType.java) | Dynamically attaches allowances and deductions to base salary in arbitrary orders with consistent monetary scale and single-use constraints. |
 | **Factory Method** | `calculator` | [`SalaryCalculatorFactory`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/calculator/SalaryCalculatorFactory.java), `PermanentSalaryCalculatorFactory`, etc. | Defers gross pay calculator instantiation to specialized creator subclasses per employment type. |
-| **Abstract Factory** | `tax` | [`PayrollComponentFactory`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/tax/PayrollComponentFactory.java), `OldTaxRegimeFactory`, `NewTaxRegimeFactory` | Produces matching families of tax and deduction calculators for tax regimes. |
+| **Strategy** | `tax` | [`TaxPolicy`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/tax/TaxPolicy.java), [`DeductionPolicy`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/tax/DeductionPolicy.java), `FullTimeTaxPolicy`, `PartTimeTaxPolicy`, etc. | Encapsulates tax and deduction algorithms per employee category, allowing seamless reuse across standard, enhanced, and request payroll flows. |
 | **Adapter** | `integration` | [`ExternalHRAdapter`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/ExternalHRAdapter.java), [`EmployeeDirectory`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/EmployeeDirectory.java) | Converts third-party [`HRRecord`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/HRRecord.java) from [`ExternalHRService`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/ExternalHRService.java) into domain `Employee` models. |
 | **Builder** | `model` | [`PayrollRequest.Builder`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/PayrollRequest.java) | Validates and constructs immutable, defensive-copied payroll calculation requests. |
 | **Singleton** | `config` | [`PayrollConfig`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/config/PayrollConfig.java) | Thread-safe enum singleton providing global default currency, FY, and tax regime. |

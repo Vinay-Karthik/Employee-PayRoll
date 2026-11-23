@@ -17,10 +17,7 @@ import model.PaySlip;
 import model.PayrollRequest;
 import report.ReportExporter;
 import repository.EmployeeRepository;
-import tax.DeductionCalculator;
 import tax.DeductionPolicy;
-import tax.PayrollComponentFactory;
-import tax.TaxCalculator;
 import tax.TaxPolicy;
 
 import java.io.IOException;
@@ -110,12 +107,11 @@ public class PayrollServiceImpl implements PayrollService {
         SalaryCalculator salaryCalculator = creator.createCalculator();
         BigDecimal gross = salaryCalculator.calculateGross(request.getSalaryComponents());
 
-        PayrollComponentFactory componentFactory = PayrollComponentFactory.forRegime(request.getTaxRegime());
-        TaxCalculator taxCalculator = componentFactory.createTaxCalculator();
-        DeductionCalculator deductionCalculator = componentFactory.createDeductionCalculator();
+        TaxPolicy taxPolicy = TaxPolicy.forEmployeeType(request.getEmployeeType());
+        DeductionPolicy deductionPolicy = DeductionPolicy.forEmployeeType(request.getEmployeeType());
 
-        BigDecimal tax = taxCalculator.calculateTax(gross);
-        BigDecimal deductions = deductionCalculator.calculateDeductions(gross)
+        BigDecimal tax = taxPolicy.calculateTax(gross);
+        BigDecimal deductions = deductionPolicy.calculateDeductions(gross)
                 .add(request.totalOptionalDeductions());
         BigDecimal net = gross.subtract(tax).subtract(deductions);
 
@@ -314,7 +310,7 @@ public class PayrollServiceImpl implements PayrollService {
      * Delegates to the shared {@link TaxPolicy} for the employee's type.
      */
     private BigDecimal calculateTaxForEmployee(Employee employee, BigDecimal enhancedGross) {
-        return tax.TaxPolicy.forEmployee(employee).calculateTax(enhancedGross);
+        return TaxPolicy.forEmployee(employee).calculateTax(enhancedGross);
     }
 
     /**
@@ -322,6 +318,6 @@ public class PayrollServiceImpl implements PayrollService {
      * Delegates to the shared {@link DeductionPolicy} for the employee's type.
      */
     private BigDecimal calculateDeductionsForEmployee(Employee employee, BigDecimal enhancedGross) {
-        return tax.DeductionPolicy.forEmployee(employee).calculateDeductions(enhancedGross);
+        return DeductionPolicy.forEmployee(employee).calculateDeductions(enhancedGross);
     }
 }

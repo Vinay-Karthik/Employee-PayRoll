@@ -19,7 +19,7 @@ import java.util.Scanner;
  * - Adapter Pattern (integration): ExternalHRAdapter adapts third-party ExternalHRService
  *   to the EmployeeDirectory target interface, injected into PayrollServiceImpl.
  * - Factory Method Pattern (calculator): SalaryCalculatorFactory creators for salary calculation.
- * - Abstract Factory Pattern (tax): Regime-based tax and deduction component creation.
+ * - Strategy Pattern (tax): TaxPolicy and DeductionPolicy for category-specific tax and deduction calculation.
  * - Builder Pattern (model): Validated immutable PayrollRequest construction.
  * - Singleton Pattern (config): Shared configuration provider.
  * - Facade Pattern (service): PayrollFacade orchestrates the monthly payroll workflow.

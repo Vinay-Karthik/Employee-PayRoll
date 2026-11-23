@@ -1,8 +1,10 @@
 package tax;
 
 import model.Employee;
+import model.EmployeeType;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 /**
  * Strategy interface for deduction calculation policies.
@@ -52,5 +54,20 @@ public interface DeductionPolicy {
      */
     static DeductionPolicy forEmployee(Employee employee) {
         return forTypeCode(employee.getTypeCode());
+    }
+
+    /**
+     * Returns the deduction policy for the given employee type category.
+     *
+     * @param employeeType the employee type category
+     * @return the corresponding deduction policy
+     */
+    static DeductionPolicy forEmployeeType(EmployeeType employeeType) {
+        Objects.requireNonNull(employeeType, "Employee type must not be null");
+        return switch (employeeType) {
+            case PERMANENT, EXECUTIVE -> FullTimeDeductionPolicy.INSTANCE;
+            case CONTRACT -> ContractorDeductionPolicy.INSTANCE;
+            case SALES -> PartTimeDeductionPolicy.INSTANCE;
+        };
     }
 }

@@ -1,7 +1,5 @@
 package model;
 
-import calculator.SalaryCalculatorFactory;
-import model.SalaryComponents;
 import tax.DeductionPolicy;
 import tax.TaxPolicy;
 import tax.TaxRegime;
@@ -15,10 +13,12 @@ import java.math.BigDecimal;
  * Tax and deduction rules are delegated to {@link tax.PartTimeTaxPolicy}
  * and {@link tax.PartTimeDeductionPolicy} for reuse across calculation paths.
  * <p>
- * Gross salary calculation is delegated to {@link calculator.PartTimeSalaryCalculator}
- * via {@link SalaryCalculatorFactory} to ensure a single source of truth.
+ * Gross salary calculation: hourly rate * hours worked with overtime (hours > 40 at 1.5x)
+ * (matches {@link calculator.PartTimeSalaryCalculator}).
  */
 public class PartTimeEmployee extends Employee {
+    private static final BigDecimal REGULAR_HOURS_THRESHOLD = new BigDecimal("40.00");
+    private static final BigDecimal OVERTIME_MULTIPLIER = new BigDecimal("1.50");
 
     private BigDecimal hourlyRate;
     private BigDecimal hoursWorked;
@@ -65,10 +65,13 @@ public class PartTimeEmployee extends Employee {
 
     @Override
     public BigDecimal calculateGrossPay() {
-        SalaryComponents components = new SalaryComponents();
-        components.setHourlyRate(hourlyRate);
-        components.setHoursWorked(hoursWorked);
-        return SalaryCalculatorFactory.create(getEmployeeType()).calculateGross(components);
+        if (hoursWorked.compareTo(REGULAR_HOURS_THRESHOLD) <= 0) {
+            return hourlyRate.multiply(hoursWorked);
+        }
+        BigDecimal regularPay = hourlyRate.multiply(REGULAR_HOURS_THRESHOLD);
+        BigDecimal overtimeHours = hoursWorked.subtract(REGULAR_HOURS_THRESHOLD);
+        BigDecimal overtimePay = overtimeHours.multiply(hourlyRate).multiply(OVERTIME_MULTIPLIER);
+        return regularPay.add(overtimePay);
     }
 
     @Override

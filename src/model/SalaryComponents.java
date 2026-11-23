@@ -8,12 +8,12 @@ import java.math.BigDecimal;
  *
  * All monetary values use BigDecimal to avoid floating-point errors.
  * Includes copy constructor for defensive copying (Builder pattern).
+ * Note: HRA and Allowances are handled by the Decorator pattern (SalaryEnhancementPipeline)
+ * rather than being part of the base salary components.
  */
 public class SalaryComponents {
     private BigDecimal basic = BigDecimal.ZERO;
     private BigDecimal bonus = BigDecimal.ZERO;
-    private BigDecimal allowances = BigDecimal.ZERO;
-    private BigDecimal hra = BigDecimal.ZERO;
     private BigDecimal hourlyRate = BigDecimal.ZERO;
     private BigDecimal hoursWorked = BigDecimal.ZERO;
     private BigDecimal fixedContractAmount = BigDecimal.ZERO;
@@ -28,8 +28,6 @@ public class SalaryComponents {
     public SalaryComponents(SalaryComponents other) {
         this.basic = other.basic;
         this.bonus = other.bonus;
-        this.allowances = other.allowances;
-        this.hra = other.hra;
         this.hourlyRate = other.hourlyRate;
         this.hoursWorked = other.hoursWorked;
         this.fixedContractAmount = other.fixedContractAmount;
@@ -52,12 +50,6 @@ public class SalaryComponents {
     public BigDecimal getBonus() { return bonus; }
     public void setBonus(BigDecimal bonus) { this.bonus = requireNonNegative("Bonus", bonus); }
 
-    public BigDecimal getAllowances() { return allowances; }
-    public void setAllowances(BigDecimal allowances) { this.allowances = requireNonNegative("Allowances", allowances); }
-
-    public BigDecimal getHra() { return hra; }
-    public void setHra(BigDecimal hra) { this.hra = requireNonNegative("HRA", hra); }
-
     public BigDecimal getHourlyRate() { return hourlyRate; }
     public void setHourlyRate(BigDecimal hourlyRate) { this.hourlyRate = requireNonNegative("Hourly rate", hourlyRate); }
 
@@ -73,7 +65,7 @@ public class SalaryComponents {
     @Override
     public String toString() {
         return String.format(
-                "SalaryComponents{basic=%s, bonus=%s, allowances=%s, hra=%s, hourlyRate=%s, hoursWorked=%s, fixedContract=%s, stipend=%s}",
-                basic, bonus, allowances, hra, hourlyRate, hoursWorked, fixedContractAmount, stipend);
+                "SalaryComponents{basic=%s, bonus=%s, hourlyRate=%s, hoursWorked=%s, fixedContract=%s, stipend=%s}",
+                basic, bonus, hourlyRate, hoursWorked, fixedContractAmount, stipend);
     }
 }

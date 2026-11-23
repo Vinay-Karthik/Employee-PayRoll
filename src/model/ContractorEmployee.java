@@ -118,8 +118,8 @@ public class ContractorEmployee extends Employee {
     }
 
     @Override
-    public int getTypeCode() {
-        return 3;
+    public EmployeeType getEmployeeType() {
+        return EmployeeType.CONTRACTOR;
     }
 
     @Override

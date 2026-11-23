@@ -87,15 +87,8 @@ public abstract class Employee {
     public abstract BigDecimal calculateTax();
     public abstract BigDecimal calculateDeductions();
     public abstract String getRoleCategory();
-    public abstract int getTypeCode();
+    public abstract EmployeeType getEmployeeType();
     public abstract String getPayDetailsSummary();
-
-    /**
-     * Returns the unified EmployeeType category for this employee.
-     */
-    public EmployeeType getEmployeeType() {
-        return EmployeeType.fromTypeCode(getTypeCode());
-    }
 
     /**
      * Template method: Generates an immutable PaySlip by coordinating polymorphic calculations.

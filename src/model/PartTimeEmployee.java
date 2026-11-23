@@ -82,8 +82,8 @@ public class PartTimeEmployee extends Employee {
     }
 
     @Override
-    public int getTypeCode() {
-        return 2;
+    public EmployeeType getEmployeeType() {
+        return EmployeeType.PART_TIME;
     }
 
     @Override

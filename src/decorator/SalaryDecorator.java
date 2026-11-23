@@ -6,19 +6,19 @@ import java.util.Objects;
 /**
  * Base Decorator (GoF Decorator Pattern).
  *
- * Implements {@link SalaryCalculator} while wrapping another {@link SalaryCalculator}
+ * Implements {@link SalaryComponent} while wrapping another {@link SalaryComponent}
  * instance. Delegates all standard calls to the wrapped component, providing a base
  * for concrete enhancement decorators.
  */
-public abstract class SalaryDecorator implements SalaryCalculator {
-    protected final SalaryCalculator decoratedCalculator;
+public abstract class SalaryDecorator implements SalaryComponent {
+    protected final SalaryComponent decoratedComponent;
 
-    public SalaryDecorator(SalaryCalculator decoratedCalculator) {
-        this.decoratedCalculator = Objects.requireNonNull(decoratedCalculator, "Decorated salary calculator must not be null");
+    public SalaryDecorator(SalaryComponent decoratedComponent) {
+        this.decoratedComponent = Objects.requireNonNull(decoratedComponent, "Decorated salary component must not be null");
     }
 
-    public SalaryCalculator getDecoratedCalculator() {
-        return decoratedCalculator;
+    public SalaryComponent getDecoratedComponent() {
+        return decoratedComponent;
     }
 
     /**
@@ -29,16 +29,16 @@ public abstract class SalaryDecorator implements SalaryCalculator {
 
     @Override
     public BigDecimal calculateSalary() {
-        return decoratedCalculator.calculateSalary();
+        return decoratedComponent.calculateSalary();
     }
 
     @Override
     public BigDecimal getBaseSalary() {
-        return decoratedCalculator.getBaseSalary();
+        return decoratedComponent.getBaseSalary();
     }
 
     @Override
     public String getDescription() {
-        return decoratedCalculator.getDescription();
+        return decoratedComponent.getDescription();
     }
 }

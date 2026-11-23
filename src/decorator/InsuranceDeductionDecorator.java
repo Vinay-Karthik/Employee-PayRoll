@@ -17,7 +17,7 @@ public class InsuranceDeductionDecorator extends SalaryDecorator {
     /**
      * Constructs Insurance Deduction decorator using the default deduction ($150.00).
      */
-    public InsuranceDeductionDecorator(SalaryCalculator decoratedCalculator) {
+    public InsuranceDeductionDecorator(SalaryComponent decoratedCalculator) {
         this(decoratedCalculator, DEFAULT_INSURANCE_DEDUCTION);
     }
 
@@ -28,7 +28,7 @@ public class InsuranceDeductionDecorator extends SalaryDecorator {
      * @param decoratedCalculator the calculator to decorate
      * @param insuranceDeduction explicit non-null, non-negative deduction amount
      */
-    public InsuranceDeductionDecorator(SalaryCalculator decoratedCalculator, BigDecimal insuranceDeduction) {
+    public InsuranceDeductionDecorator(SalaryComponent decoratedCalculator, BigDecimal insuranceDeduction) {
         super(decoratedCalculator);
         if (insuranceDeduction == null) {
             throw new IllegalArgumentException("Insurance deduction cannot be null");

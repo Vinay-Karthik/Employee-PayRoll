@@ -16,7 +16,7 @@ public class PerformanceBonusDecorator extends SalaryDecorator {
     /**
      * Constructs Performance Bonus decorator using default 10% of base salary.
      */
-    public PerformanceBonusDecorator(SalaryCalculator decoratedCalculator) {
+    public PerformanceBonusDecorator(SalaryComponent decoratedCalculator) {
         super(decoratedCalculator);
         this.bonusAmount = decoratedCalculator.getBaseSalary()
                 .multiply(DEFAULT_BONUS_PERCENTAGE)
@@ -30,7 +30,7 @@ public class PerformanceBonusDecorator extends SalaryDecorator {
      * @param decoratedCalculator the calculator to decorate
      * @param bonusAmount explicit non-null, non-negative bonus amount
      */
-    public PerformanceBonusDecorator(SalaryCalculator decoratedCalculator, BigDecimal bonusAmount) {
+    public PerformanceBonusDecorator(SalaryComponent decoratedCalculator, BigDecimal bonusAmount) {
         super(decoratedCalculator);
         if (bonusAmount == null) {
             throw new IllegalArgumentException("Performance bonus cannot be null");

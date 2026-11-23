@@ -10,7 +10,7 @@ import java.math.RoundingMode;
  * Remains completely unmodified when decorators are dynamically added.
  * Enforces a consistent scale of 2 with RoundingMode.HALF_UP.
  */
-public class BaseSalaryCalculator implements SalaryCalculator {
+public class BaseSalaryCalculator implements SalaryComponent {
     private final BigDecimal baseSalary;
 
     /**

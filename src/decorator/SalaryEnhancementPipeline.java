@@ -18,7 +18,7 @@ import java.util.Set;
  */
 public class SalaryEnhancementPipeline {
 
-    private SalaryCalculator currentCalculator;
+    private SalaryComponent currentCalculator;
     private final Set<DecoratorType> appliedTypes = EnumSet.noneOf(DecoratorType.class);
 
     /**
@@ -83,7 +83,7 @@ public class SalaryEnhancementPipeline {
         }
 
         // Business rule 2: Construct decorator and chain
-        SalaryCalculator enhanced = switch (type) {
+        SalaryComponent enhanced = switch (type) {
             case HRA -> customAmount == null
                     ? new HraDecorator(currentCalculator)
                     : new HraDecorator(currentCalculator, customAmount);
@@ -94,7 +94,7 @@ public class SalaryEnhancementPipeline {
                     ? new PerformanceBonusDecorator(currentCalculator)
                     : new PerformanceBonusDecorator(currentCalculator, customAmount);
             case INSURANCE_DEDUCTION -> {
-                SalaryCalculator next = customAmount == null
+                SalaryComponent next = customAmount == null
                         ? new InsuranceDeductionDecorator(currentCalculator)
                         : new InsuranceDeductionDecorator(currentCalculator, customAmount);
                 // Validate deduction immediately against accumulated salary

@@ -16,7 +16,7 @@ public class HraDecorator extends SalaryDecorator {
     /**
      * Constructs HRA decorator using default 20% of base salary.
      */
-    public HraDecorator(SalaryCalculator decoratedCalculator) {
+    public HraDecorator(SalaryComponent decoratedCalculator) {
         super(decoratedCalculator);
         this.hraAmount = decoratedCalculator.getBaseSalary()
                 .multiply(DEFAULT_HRA_PERCENTAGE)
@@ -30,7 +30,7 @@ public class HraDecorator extends SalaryDecorator {
      * @param decoratedCalculator the calculator to decorate
      * @param hraAmount explicit non-null, non-negative HRA amount
      */
-    public HraDecorator(SalaryCalculator decoratedCalculator, BigDecimal hraAmount) {
+    public HraDecorator(SalaryComponent decoratedCalculator, BigDecimal hraAmount) {
         super(decoratedCalculator);
         if (hraAmount == null) {
             throw new IllegalArgumentException("HRA amount cannot be null");

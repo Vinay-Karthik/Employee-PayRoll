@@ -2,7 +2,6 @@ package service;
 
 import calculator.SalaryCalculator;
 import calculator.SalaryCalculatorFactory;
-import decorator.SalaryEnhancementPipeline;
 import model.Employee;
 import model.EmployeeType;
 import model.PaySlip;
@@ -84,6 +83,13 @@ public class PayrollServiceImpl implements PayrollService {
                 .toList();
     }
 
+    /**
+     * Separate demonstration path: processes a PayrollRequest built via the Builder pattern,
+     * using Factory Method (SalaryCalculatorFactory) + Strategy (TaxPolicy/DeductionPolicy)
+     * to produce a PaySlip. This is intentionally distinct from the standard employee
+     * payslip flow ({@link #processEmployeePaySlip(int)} / {@link #processAllPaySlips()}),
+     * which uses polymorphic {@link Employee#generatePaySlip()} calculations.
+     */
     @Override
     public PaySlip processPayrollRequest(PayrollRequest request) {
         Objects.requireNonNull(request, "Payroll request must not be null");
@@ -168,10 +174,5 @@ public class PayrollServiceImpl implements PayrollService {
         sb.append("========================================================================================================\n");
 
         return sb.toString();
-    }
-
-    @Override
-    public SalaryEnhancementPipeline createSalaryEnhancementPipeline(BigDecimal baseSalary) {
-        return new SalaryEnhancementPipeline(baseSalary);
     }
 }

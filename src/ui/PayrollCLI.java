@@ -304,7 +304,7 @@ public class PayrollCLI {
         try {
             System.out.print("Enter Base Salary: ");
             BigDecimal base = parseAmount(scanner.nextLine());
-            SalaryEnhancementPipeline pipeline = payrollService.createSalaryEnhancementPipeline(base);
+            SalaryEnhancementPipeline pipeline = new SalaryEnhancementPipeline(base);
             String currency = view.getCurrency();
 
             boolean adding = true;

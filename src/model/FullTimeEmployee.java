@@ -81,8 +81,8 @@ public class FullTimeEmployee extends Employee {
     }
 
     @Override
-    public int getTypeCode() {
-        return 1;
+    public EmployeeType getEmployeeType() {
+        return EmployeeType.FULL_TIME;
     }
 
     @Override

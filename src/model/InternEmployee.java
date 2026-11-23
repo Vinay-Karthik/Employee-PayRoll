@@ -63,8 +63,8 @@ public class InternEmployee extends Employee {
     }
 
     @Override
-    public int getTypeCode() {
-        return 4;
+    public EmployeeType getEmployeeType() {
+        return EmployeeType.INTERN;
     }
 
     @Override

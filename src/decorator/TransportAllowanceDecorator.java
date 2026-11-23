@@ -16,7 +16,7 @@ public class TransportAllowanceDecorator extends SalaryDecorator {
     /**
      * Constructs Transport Allowance decorator using the default allowance ($1600.00).
      */
-    public TransportAllowanceDecorator(SalaryCalculator decoratedCalculator) {
+    public TransportAllowanceDecorator(SalaryComponent decoratedCalculator) {
         this(decoratedCalculator, DEFAULT_TRANSPORT_ALLOWANCE);
     }
 
@@ -27,7 +27,7 @@ public class TransportAllowanceDecorator extends SalaryDecorator {
      * @param decoratedCalculator the calculator to decorate
      * @param transportAllowance explicit non-null, non-negative allowance amount
      */
-    public TransportAllowanceDecorator(SalaryCalculator decoratedCalculator, BigDecimal transportAllowance) {
+    public TransportAllowanceDecorator(SalaryComponent decoratedCalculator, BigDecimal transportAllowance) {
         super(decoratedCalculator);
         if (transportAllowance == null) {
             throw new IllegalArgumentException("Transport allowance cannot be null");

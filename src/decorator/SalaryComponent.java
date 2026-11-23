@@ -8,7 +8,7 @@ import java.math.BigDecimal;
  * Defines the contract for salary calculation components that can be
  * dynamically enhanced with allowances, bonuses, and deductions.
  */
-public interface SalaryCalculator {
+public interface SalaryComponent {
 
     /**
      * Calculates the total net/gross salary including all applied enhancements.

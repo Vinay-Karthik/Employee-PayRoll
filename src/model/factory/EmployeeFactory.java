@@ -1,4 +1,4 @@
-package ui.factory;
+package model.factory;
 
 import model.entity.Employee;
 import model.entity.EmployeeType;

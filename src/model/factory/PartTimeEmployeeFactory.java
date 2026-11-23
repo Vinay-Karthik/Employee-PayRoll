@@ -1,4 +1,4 @@
-package ui.factory;
+package model.factory;
 
 import ui.cli.PayrollCLI;
 import model.entity.Employee;

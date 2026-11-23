@@ -1,4 +1,4 @@
-package ui.factory;
+package model.factory;
 
 import tax.regime.TaxRegime;
 

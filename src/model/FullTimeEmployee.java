@@ -62,7 +62,7 @@ public class FullTimeEmployee extends Employee {
 
     @Override
     public BigDecimal calculateGrossPay() {
-        return baseSalary.add(bonus);
+        return GrossPayCalculator.fullTime(baseSalary, bonus);
     }
 
     @Override

@@ -17,8 +17,6 @@ import java.math.BigDecimal;
  * (matches {@link calculator.PartTimeSalaryCalculator}).
  */
 public class PartTimeEmployee extends Employee {
-    private static final BigDecimal REGULAR_HOURS_THRESHOLD = new BigDecimal("40.00");
-    private static final BigDecimal OVERTIME_MULTIPLIER = new BigDecimal("1.50");
 
     private BigDecimal hourlyRate;
     private BigDecimal hoursWorked;
@@ -65,13 +63,7 @@ public class PartTimeEmployee extends Employee {
 
     @Override
     public BigDecimal calculateGrossPay() {
-        if (hoursWorked.compareTo(REGULAR_HOURS_THRESHOLD) <= 0) {
-            return hourlyRate.multiply(hoursWorked);
-        }
-        BigDecimal regularPay = hourlyRate.multiply(REGULAR_HOURS_THRESHOLD);
-        BigDecimal overtimeHours = hoursWorked.subtract(REGULAR_HOURS_THRESHOLD);
-        BigDecimal overtimePay = overtimeHours.multiply(hourlyRate).multiply(OVERTIME_MULTIPLIER);
-        return regularPay.add(overtimePay);
+        return GrossPayCalculator.partTime(hourlyRate, hoursWorked);
     }
 
     @Override

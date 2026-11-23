@@ -44,7 +44,7 @@ public class InternEmployee extends Employee {
 
     @Override
     public BigDecimal calculateGrossPay() {
-        return stipend;
+        return GrossPayCalculator.intern(stipend);
     }
 
     @Override

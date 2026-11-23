@@ -1,20 +1,21 @@
 package calculator;
 
 import model.EmployeeType;
+import model.GrossPayCalculator;
 import model.SalaryComponents;
 
 import java.math.BigDecimal;
 
 /**
  * Full-time salaried employees: Basic + Bonus.
- * Matches {@link model.FullTimeEmployee#calculateGrossPay()} for consistency.
+ * Delegates to {@link GrossPayCalculator} — the single source of truth shared
+ * with {@link model.FullTimeEmployee#calculateGrossPay()}.
  */
 public class FullTimeSalaryCalculator implements SalaryCalculator {
 
     @Override
     public BigDecimal calculateGross(SalaryComponents components) {
-        return components.getBasic()
-                .add(components.getBonus());
+        return GrossPayCalculator.fullTime(components.getBasic(), components.getBonus());
     }
 
     @Override

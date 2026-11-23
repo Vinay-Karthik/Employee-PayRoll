@@ -1,14 +1,14 @@
 package service;
 
-import calculator.SalaryCalculator;
-import calculator.SalaryCalculatorFactory;
-import model.Employee;
-import model.EmployeeType;
-import model.PaySlip;
-import model.PayrollRequest;
+import calculator.core.SalaryCalculator;
+import calculator.factory.SalaryCalculatorFactory;
+import model.entity.Employee;
+import model.entity.EmployeeType;
+import model.value.PaySlip;
+import model.request.PayrollRequest;
 import repository.EmployeeRepository;
-import tax.DeductionPolicy;
-import tax.TaxPolicy;
+import tax.policy.DeductionPolicy;
+import tax.policy.TaxPolicy;
 
 import java.math.BigDecimal;
 import java.util.List;

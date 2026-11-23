@@ -1,4 +1,4 @@
-import calculator.SalaryCalculatorFactory;
+import calculator.factory.SalaryCalculatorFactory;
 import report.FileReportExporter;
 import report.ReportExporter;
 import repository.EmployeeRepository;
@@ -6,8 +6,8 @@ import repository.InMemoryEmployeeRepository;
 import service.PayrollFacade;
 import service.PayrollService;
 import service.PayrollServiceImpl;
-import ui.ConsoleView;
-import ui.PayrollCLI;
+import ui.cli.PayrollCLI;
+import ui.view.ConsoleView;
 
 import java.util.Scanner;
 

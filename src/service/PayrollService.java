@@ -1,8 +1,8 @@
 package service;
 
-import model.Employee;
-import model.PaySlip;
-import model.PayrollRequest;
+import model.entity.Employee;
+import model.value.PaySlip;
+import model.request.PayrollRequest;
 
 import java.util.List;
 import java.util.Optional;

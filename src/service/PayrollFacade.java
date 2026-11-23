@@ -1,6 +1,6 @@
 package service;
 
-import model.PaySlip;
+import model.value.PaySlip;
 import report.ReportExporter;
 
 import java.io.IOException;

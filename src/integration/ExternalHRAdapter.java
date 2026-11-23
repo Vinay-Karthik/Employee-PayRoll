@@ -1,6 +1,6 @@
 package integration;
 
-import model.*;
+import model.entity.*;
 import repository.EmployeeRepository;
 
 import java.math.BigDecimal;

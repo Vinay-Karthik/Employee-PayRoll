@@ -1,6 +1,6 @@
 package repository;
 
-import model.*;
+import model.entity.*;
 
 import java.math.BigDecimal;
 import java.util.*;

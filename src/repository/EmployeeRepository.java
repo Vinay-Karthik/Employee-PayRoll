@@ -1,6 +1,6 @@
 package repository;
 
-import model.Employee;
+import model.entity.Employee;
 import java.util.List;
 import java.util.Optional;
 

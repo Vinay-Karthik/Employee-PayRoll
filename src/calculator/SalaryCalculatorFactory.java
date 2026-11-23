@@ -1,9 +1,7 @@
 package calculator;
 
 import model.EmployeeType;
-import model.SalaryComponents;
 
-import java.math.BigDecimal;
 import java.util.Objects;
 
 /**
@@ -22,20 +20,6 @@ public abstract class SalaryCalculatorFactory {
     public abstract SalaryCalculator createCalculator();
 
     /**
-     * Creator operation: calculates gross salary using the product
-     * instantiated by the factory method.
-     */
-    public BigDecimal calculateGross(SalaryComponents components) {
-        SalaryCalculator calculator = createCalculator();
-        return calculator.calculateGross(components);
-    }
-
-    /**
-     * Returns the employee type supported by this creator.
-     */
-    public abstract EmployeeType getSupportedType();
-
-    /**
      * Selects the appropriate concrete Creator for the given EmployeeType.
      */
     public static SalaryCalculatorFactory forType(EmployeeType type) {
@@ -46,12 +30,5 @@ public abstract class SalaryCalculatorFactory {
             case CONTRACTOR -> new ContractorSalaryCalculatorFactory();
             case INTERN -> new InternSalaryCalculatorFactory();
         };
-    }
-
-    /**
-     * Convenience method to obtain a calculator product directly for a given type.
-     */
-    public static SalaryCalculator create(EmployeeType type) {
-        return forType(type).createCalculator();
     }
 }

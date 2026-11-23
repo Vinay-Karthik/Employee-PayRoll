@@ -19,9 +19,4 @@ public class ContractorDeductionPolicy implements DeductionPolicy {
     public BigDecimal calculateDeductions(BigDecimal gross) {
         return gross.multiply(SERVICE_FEE_RATE);
     }
-
-    @Override
-    public int getTypeCode() {
-        return 3; // Contractor
-    }
 }

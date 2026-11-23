@@ -21,9 +21,4 @@ public class FullTimeDeductionPolicy implements DeductionPolicy {
     public BigDecimal calculateDeductions(BigDecimal gross) {
         return HEALTH_INSURANCE_DEDUCTION.add(gross.multiply(RETIREMENT_FUND_RATE));
     }
-
-    @Override
-    public int getTypeCode() {
-        return 1; // Full-Time
-    }
 }

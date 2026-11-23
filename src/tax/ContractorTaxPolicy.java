@@ -22,9 +22,4 @@ public class ContractorTaxPolicy implements TaxPolicy {
     public BigDecimal calculateTax(BigDecimal gross, TaxRegime regime) {
         return BigDecimal.ZERO;
     }
-
-    @Override
-    public int getTypeCode() {
-        return 3; // Contractor
-    }
 }

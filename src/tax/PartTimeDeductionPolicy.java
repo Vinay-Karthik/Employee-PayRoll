@@ -17,9 +17,4 @@ public class PartTimeDeductionPolicy implements DeductionPolicy {
     public BigDecimal calculateDeductions(BigDecimal gross) {
         return BigDecimal.ZERO;
     }
-
-    @Override
-    public int getTypeCode() {
-        return 2; // Part-Time
-    }
 }

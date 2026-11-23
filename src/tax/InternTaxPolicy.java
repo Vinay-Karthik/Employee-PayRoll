@@ -32,9 +32,4 @@ public class InternTaxPolicy implements TaxPolicy {
         }
         return BigDecimal.ZERO;
     }
-
-    @Override
-    public int getTypeCode() {
-        return 4; // Intern
-    }
 }

@@ -22,28 +22,6 @@ public interface DeductionPolicy {
     BigDecimal calculateDeductions(BigDecimal gross);
 
     /**
-     * Returns the employee type code this policy applies to.
-     */
-    int getTypeCode();
-
-    /**
-     * Returns the deduction policy for the given employee type code.
-     *
-     * @param typeCode the employee type code (1=Full-Time, 2=Part-Time, 3=Contractor, 4=Intern)
-     * @return the corresponding deduction policy
-     * @throws IllegalArgumentException if no policy exists for the type code
-     */
-    static DeductionPolicy forTypeCode(int typeCode) {
-        return switch (typeCode) {
-            case 1 -> FullTimeDeductionPolicy.INSTANCE;
-            case 2 -> PartTimeDeductionPolicy.INSTANCE;
-            case 3 -> ContractorDeductionPolicy.INSTANCE;
-            case 4 -> InternDeductionPolicy.INSTANCE;
-            default -> throw new IllegalArgumentException("Unknown employee type code: " + typeCode);
-        };
-    }
-
-    /**
      * Returns the deduction policy for the given employee.
      *
      * @param employee the employee

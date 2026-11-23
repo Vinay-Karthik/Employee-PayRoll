@@ -1,6 +1,5 @@
 package calculator;
 
-import model.EmployeeType;
 import model.GrossPayCalculator;
 import model.SalaryComponents;
 
@@ -16,10 +15,5 @@ public class FullTimeSalaryCalculator implements SalaryCalculator {
     @Override
     public BigDecimal calculateGross(SalaryComponents components) {
         return GrossPayCalculator.fullTime(components.getBasic(), components.getBonus());
-    }
-
-    @Override
-    public EmployeeType getSupportedType() {
-        return EmployeeType.FULL_TIME;
     }
 }

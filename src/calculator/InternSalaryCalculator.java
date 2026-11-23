@@ -18,9 +18,4 @@ public class InternSalaryCalculator implements SalaryCalculator {
         return GrossPayCalculator.intern(
                 components.getStipend().signum() > 0 ? components.getStipend() : components.getBasic());
     }
-
-    @Override
-    public EmployeeType getSupportedType() {
-        return EmployeeType.INTERN;
-    }
 }

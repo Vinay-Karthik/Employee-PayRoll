@@ -19,9 +19,4 @@ public class PartTimeSalaryCalculator implements SalaryCalculator {
         BigDecimal hourlyRate = components.getHourlyRate().signum() > 0 ? components.getHourlyRate() : components.getBasic();
         return GrossPayCalculator.partTime(hourlyRate, components.getHoursWorked());
     }
-
-    @Override
-    public EmployeeType getSupportedType() {
-        return EmployeeType.PART_TIME;
-    }
 }

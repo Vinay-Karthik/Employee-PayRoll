@@ -33,28 +33,6 @@ public interface TaxPolicy {
     }
 
     /**
-     * Returns the employee type code this policy applies to.
-     */
-    int getTypeCode();
-
-    /**
-     * Returns the tax policy for the given employee type code.
-     *
-     * @param typeCode the employee type code (1=Full-Time, 2=Part-Time, 3=Contractor, 4=Intern)
-     * @return the corresponding tax policy
-     * @throws IllegalArgumentException if no policy exists for the type code
-     */
-    static TaxPolicy forTypeCode(int typeCode) {
-        return switch (typeCode) {
-            case 1 -> FullTimeTaxPolicy.INSTANCE;
-            case 2 -> PartTimeTaxPolicy.INSTANCE;
-            case 3 -> ContractorTaxPolicy.INSTANCE;
-            case 4 -> InternTaxPolicy.INSTANCE;
-            default -> throw new IllegalArgumentException("Unknown employee type code: " + typeCode);
-        };
-    }
-
-    /**
      * Returns the tax policy for the given employee.
      *
      * @param employee the employee

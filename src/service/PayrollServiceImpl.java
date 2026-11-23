@@ -2,7 +2,6 @@ package service;
 
 import calculator.SalaryCalculator;
 import calculator.SalaryCalculatorFactory;
-import decorator.DecoratorType;
 import decorator.SalaryEnhancementPipeline;
 import model.Employee;
 import model.EmployeeType;
@@ -11,11 +10,9 @@ import model.PayrollRequest;
 import repository.EmployeeRepository;
 import tax.DeductionPolicy;
 import tax.TaxPolicy;
-import tax.TaxRegime;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -176,113 +173,5 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     public SalaryEnhancementPipeline createSalaryEnhancementPipeline(BigDecimal baseSalary) {
         return new SalaryEnhancementPipeline(baseSalary);
-    }
-
-    /**
-     * Generates a PaySlip for an employee using the SalaryEnhancementPipeline.
-     * Integrates the decorator-based salary enhancement flow with standard
-     * employee payslip generation, allowing dynamic application of HRA, allowances,
-     * bonuses, and deductions on top of the employee's base salary.
-     *
-     * @param employeeId the ID of the employee
-     * @param decoratorTypes the decorator types to apply (e.g., HRA, TRANSPORT_ALLOWANCE)
-     * @return Optional containing the enhanced PaySlip, or empty if employee not found
-     * @throws NullPointerException if decoratorTypes array or any of its elements is null
-     */
-    @Override
-    public Optional<PaySlip> generateEnhancedPaySlip(int employeeId, DecoratorType... decoratorTypes) {
-        Objects.requireNonNull(decoratorTypes, "decoratorTypes array must not be null");
-        for (int i = 0; i < decoratorTypes.length; i++) {
-            Objects.requireNonNull(decoratorTypes[i], "decoratorTypes[" + i + "] must not be null");
-        }
-
-        return employeeRepository.findById(employeeId).map(employee -> {
-            SalaryEnhancementPipeline pipeline = new SalaryEnhancementPipeline(extractBaseSalary(employee));
-            for (DecoratorType type : decoratorTypes) {
-                pipeline.applyDecorator(type);
-            }
-            return createPaySlipFromPipeline(employee, pipeline);
-        });
-    }
-
-    /**
-     * Generates a PaySlip for an employee using the SalaryEnhancementPipeline
-     * with custom amounts for specific decorators.
-     *
-     * @param employeeId the ID of the employee
-     * @param decoratorCustomAmounts map of decorator types to custom amounts
-     * @return Optional containing the enhanced PaySlip, or empty if employee not found
-     * @throws NullPointerException if decoratorCustomAmounts map or any key/value is null
-     */
-    @Override
-    public Optional<PaySlip> generateEnhancedPaySlip(int employeeId, Map<DecoratorType, BigDecimal> decoratorCustomAmounts) {
-        Objects.requireNonNull(decoratorCustomAmounts, "decoratorCustomAmounts map must not be null");
-        for (Map.Entry<DecoratorType, BigDecimal> entry : decoratorCustomAmounts.entrySet()) {
-            Objects.requireNonNull(entry.getKey(), "DecoratorType key in map must not be null");
-            Objects.requireNonNull(entry.getValue(), "Custom amount value for " + entry.getKey() + " must not be null");
-        }
-
-        return employeeRepository.findById(employeeId).map(employee -> {
-            SalaryEnhancementPipeline pipeline = new SalaryEnhancementPipeline(extractBaseSalary(employee));
-            for (Map.Entry<DecoratorType, BigDecimal> entry : decoratorCustomAmounts.entrySet()) {
-                pipeline.applyDecorator(entry.getKey(), entry.getValue());
-            }
-            return createPaySlipFromPipeline(employee, pipeline);
-        });
-    }
-
-    /**
-     * Creates an enhanced PaySlip from an employee and evaluated SalaryEnhancementPipeline.
-     */
-    private PaySlip createPaySlipFromPipeline(Employee employee, SalaryEnhancementPipeline pipeline) {
-        BigDecimal gross = pipeline.getCurrentSalary();
-        BigDecimal tax = calculateTaxForEmployee(employee, gross);
-        BigDecimal deductions = calculateDeductionsForEmployee(employee, gross);
-        BigDecimal net = gross.subtract(tax).subtract(deductions);
-
-        if (net.signum() < 0) {
-            throw new IllegalStateException(
-                    "Calculated net pay is negative (" + net + "). " +
-                    "Gross: " + gross + ", Tax: " + tax + ", Deductions: " + deductions
-            );
-        }
-
-        return new PaySlip(
-                employee.getId(),
-                employee.getName(),
-                employee.getDepartment(),
-                employee.getRoleCategory(),
-                employee.getBankAccountNumber(),
-                gross, tax, deductions, net,
-                this.financialYear,
-                pipeline.getCurrentDescription()
-        );
-    }
-
-    /**
-     * Extracts the base salary from an employee for the enhancement pipeline.
-     * Uses the employee's full gross pay as the starting point for the decorator pipeline.
-     *
-     * @param employee the employee to extract base salary from
-     * @return the employee's standard gross pay
-     */
-    private BigDecimal extractBaseSalary(Employee employee) {
-        return employee.calculateGrossPay();
-    }
-
-    /**
-     * Calculates tax for an employee based on their type and the enhanced gross salary.
-     * Delegates to the shared {@link TaxPolicy} for the employee's type.
-     */
-    private BigDecimal calculateTaxForEmployee(Employee employee, BigDecimal enhancedGross) {
-        return TaxPolicy.forEmployee(employee).calculateTax(enhancedGross, employee.getTaxRegime());
-    }
-
-    /**
-     * Calculates deductions for an employee based on their type and the enhanced gross salary.
-     * Delegates to the shared {@link DeductionPolicy} for the employee's type.
-     */
-    private BigDecimal calculateDeductionsForEmployee(Employee employee, BigDecimal enhancedGross) {
-        return DeductionPolicy.forEmployee(employee).calculateDeductions(enhancedGross);
     }
 }

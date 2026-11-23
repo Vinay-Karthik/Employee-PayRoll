@@ -18,9 +18,4 @@ public class ContractorSalaryCalculator implements SalaryCalculator {
         BigDecimal rate = components.getHourlyRate().signum() > 0 ? components.getHourlyRate() : components.getBasic();
         return GrossPayCalculator.contractor(components.getFixedContractAmount(), rate, components.getHoursWorked());
     }
-
-    @Override
-    public EmployeeType getSupportedType() {
-        return EmployeeType.CONTRACTOR;
-    }
 }

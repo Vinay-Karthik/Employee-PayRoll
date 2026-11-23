@@ -1,6 +1,5 @@
 package calculator;
 
-import model.EmployeeType;
 import model.SalaryComponents;
 
 import java.math.BigDecimal;
@@ -15,9 +14,4 @@ public interface SalaryCalculator {
      * Computes the gross salary for the given salary components.
      */
     BigDecimal calculateGross(SalaryComponents components);
-
-    /**
-     * Returns the employee type this calculator supports.
-     */
-    EmployeeType getSupportedType();
 }

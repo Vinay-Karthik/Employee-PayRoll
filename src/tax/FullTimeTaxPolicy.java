@@ -44,9 +44,4 @@ public class FullTimeTaxPolicy implements TaxPolicy {
         }
         return tax;
     }
-
-    @Override
-    public int getTypeCode() {
-        return 1; // Full-Time
-    }
 }

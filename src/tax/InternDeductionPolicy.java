@@ -17,9 +17,4 @@ public class InternDeductionPolicy implements DeductionPolicy {
     public BigDecimal calculateDeductions(BigDecimal gross) {
         return BigDecimal.ZERO;
     }
-
-    @Override
-    public int getTypeCode() {
-        return 4; // Intern
-    }
 }

@@ -30,9 +30,4 @@ public class PartTimeTaxPolicy implements TaxPolicy {
         }
         return gross.multiply(TAX_RATE);
     }
-
-    @Override
-    public int getTypeCode() {
-        return 2; // Part-Time
-    }
 }

@@ -3,11 +3,11 @@ package ui;
 import decorator.DecoratorType;
 import decorator.SalaryEnhancementPipeline;
 import model.*;
-import service.PayrollBatchResult;
 import service.PayrollFacade;
 import service.PayrollService;
 import tax.TaxRegime;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
@@ -165,48 +165,19 @@ public class PayrollCLI {
     }
 
     private void handleFullPayroll() {
-        PayrollBatchResult result = payrollFacade.processMonthlyPayroll(reportFilePath);
-
-        // Display summary based on result
-        view.displayMessage("\n=== Monthly Payroll Processing Result ===");
-        view.displayMessage("Status: " + result.getStatus());
-        view.displayMessage("Total Employees: " + result.getTotalEmployees());
-        view.displayMessage("Successful Payslips: " + result.getSuccessfulCount());
-        view.displayMessage("Failed Payslips: " + result.getFailedCount());
-
-        if (result.isPartialSuccess()) {
-            view.displayMessage("WARNING: Some employees failed. Failed IDs: " + result.getFailedEmployeeIds());
-            // Display summary report for partial success
-            if (result.getSummaryReport() != null && !result.getSummaryReport().isBlank()) {
-                view.displayReport(result.getSummaryReport());
+        try {
+            view.displayMessage("\nProcessing monthly payroll...");
+            String report = payrollFacade.processMonthlyPayroll(reportFilePath);
+            if (report == null || report.isBlank()) {
+                view.displayMessage("No employees found in the system. No report exported.");
+                return;
             }
-            if (result.isReportExported()) {
-                view.displayMessage("Successfully exported report to: " + result.getReportDestination());
-            }
-        } else if (result.isFailure()) {
-            view.displayError("Payroll processing failed at stage: " + result.getFailedStage());
-            view.displayError("Reason: " + result.getErrorMessage());
-            if (!result.getFailedEmployeeIds().isEmpty()) {
-                view.displayMessage("Failed Employee IDs: " + result.getFailedEmployeeIds());
-            }
-            // If report was generated but export failed, still show the report
-            if (result.getSummaryReport() != null && !result.getSummaryReport().isBlank()) {
-                view.displayMessage("\nReport was generated but not exported:");
-                view.displayReport(result.getSummaryReport());
-            }
-            return;
-        }
-
-        // Full success case
-        if (result.getSummaryReport() != null && !result.getSummaryReport().isBlank()) {
-            view.displayReport(result.getSummaryReport());
-        }
-
-        // Display export confirmation - use isReportExported() to avoid false success messages
-        if (result.isReportExported()) {
-            view.displayMessage("Successfully exported report to: " + result.getReportDestination());
-        } else if (result.getStatus() == PayrollBatchResult.Status.SUCCESS && result.getTotalEmployees() == 0) {
-            view.displayMessage("No report exported (no employees in system).");
+            view.displayReport(report);
+            view.displayMessage("Successfully exported report to: " + reportFilePath);
+        } catch (IOException e) {
+            view.displayError("Failed to export payroll summary report to " + reportFilePath + ": " + e.getMessage());
+        } catch (RuntimeException e) {
+            view.displayError("Payroll processing failed: " + e.getMessage());
         }
     }
 

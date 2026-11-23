@@ -66,8 +66,7 @@ Employee-PayRoll/
 │   ├── service/                       # Core payroll business workflow services
 │   │   ├── PayrollService.java
 │   │   ├── PayrollServiceImpl.java
-│   │   ├── PayrollFacade.java         # Facade orchestrating monthly payroll batch run
-│   │   └── PayrollBatchResult.java    # Result model for payroll batch execution
+│   │   └── PayrollFacade.java         # Facade orchestrating monthly payroll processing & report export
 │   ├── report/                        # Report generation & file export
 │   │   ├── ReportExporter.java
 │   │   └── FileReportExporter.java
@@ -90,7 +89,7 @@ Employee-PayRoll/
 | **Strategy** | `tax` | [`TaxPolicy`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/tax/TaxPolicy.java), [`DeductionPolicy`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/tax/DeductionPolicy.java), `FullTimeTaxPolicy`, `PartTimeTaxPolicy`, etc. | Encapsulates tax and deduction algorithms per employee category, allowing seamless reuse across standard, enhanced, and request payroll flows. |
 | **Adapter** | `integration` | [`ExternalHRAdapter`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/ExternalHRAdapter.java), [`EmployeeRepository`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/repository/EmployeeRepository.java) | Adapts third-party [`HRRecord`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/HRRecord.java) from [`ExternalHRService`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/ExternalHRService.java) to the domain `EmployeeRepository` contract as a standalone integration demonstration. |
 | **Builder** | `model` | [`PayrollRequest.Builder`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/PayrollRequest.java) | Validates and constructs immutable, defensive-copied payroll calculation requests. |
-| **Facade** | `service` | [`PayrollFacade`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/service/PayrollFacade.java) | Simplifies monthly batch processing by coordinating employee retrieval, payslip generation, and report export. |
+| **Facade** | `service` | [`PayrollFacade`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/service/PayrollFacade.java) | Simplifies payroll operations by coordinating employee retrieval, payslip generation, and report export. |
 | **Repository** | `repository` | [`EmployeeRepository`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/repository/EmployeeRepository.java), [`InMemoryEmployeeRepository`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/repository/InMemoryEmployeeRepository.java) | Decouples business logic from data storage mechanisms. |
 
 ---

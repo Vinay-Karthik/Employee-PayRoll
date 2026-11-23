@@ -31,7 +31,7 @@ public class ConsoleView {
         System.out.println("3. Calculate & print payslip for an employee");
         System.out.println("4. Process & export full payroll report");
         System.out.println("5. Delete an employee");
-        System.out.println("6. Quick payroll via template & request (Builder/Prototype)");
+        System.out.println("6. Quick payroll via request (Builder Pattern)");
         System.out.println("7. Dynamic salary enhancement (Decorator Pattern)");
         System.out.println("8. Exit");
         System.out.print("Enter choice (1-8): ");

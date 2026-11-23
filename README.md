@@ -22,9 +22,7 @@ Employee-PayRoll/
 │   │   ├── EmployeeType.java          # Employment structure categories enum
 │   │   ├── SalaryComponents.java      # Monetary salary components (with copy constructor)
 │   │   ├── PaySlip.java               # Immutable record DTO for calculation results
-│   │   ├── PayrollRequest.java        # Builder-constructed immutable payroll run request
-│   │   ├── PayrollTemplate.java       # Prototype-clonable reusable configuration
-│   │   └── PayrollTemplateCatalog.java# Predefined template catalog
+│   │   └── PayrollRequest.java        # Builder-constructed immutable payroll run request
 │   ├── calculator/                    # Salary calculation engines (Factory Method Pattern)
 │   │   ├── SalaryCalculator.java      # Product interface for gross pay calculation
 │   │   ├── SalaryCalculatorFactory.java# GoF Abstract Creator contract
@@ -94,7 +92,6 @@ Employee-PayRoll/
 | **Abstract Factory** | `tax` | [`PayrollComponentFactory`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/tax/PayrollComponentFactory.java), `OldTaxRegimeFactory`, `NewTaxRegimeFactory` | Produces matching families of tax and deduction calculators for tax regimes. |
 | **Adapter** | `integration` | [`ExternalHRAdapter`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/ExternalHRAdapter.java), [`EmployeeDirectory`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/EmployeeDirectory.java) | Converts third-party [`HRRecord`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/HRRecord.java) from [`ExternalHRService`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/integration/ExternalHRService.java) into domain `Employee` models. |
 | **Builder** | `model` | [`PayrollRequest.Builder`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/PayrollRequest.java) | Validates and constructs immutable, defensive-copied payroll calculation requests. |
-| **Prototype** | `model` | [`PayrollTemplate`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/PayrollTemplate.java), [`PayrollTemplateCatalog`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/model/PayrollTemplateCatalog.java) | Deep-copies reusable payroll configurations that can be customized per employee. |
 | **Singleton** | `config` | [`PayrollConfig`](file:///C:/Users/TrueID/Downloads/Employee-PayRoll/src/config/PayrollConfig.java) | Thread-safe enum singleton providing global default currency, FY, and tax regime. |
 
 ---

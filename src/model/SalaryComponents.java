@@ -8,7 +8,7 @@ import java.math.BigDecimal;
  * reads only the components relevant to its salary structure.
  *
  * All monetary values use BigDecimal to avoid floating-point errors.
- * Includes copy constructor for deep copying (Prototype pattern).
+ * Includes copy constructor for defensive copying (Builder pattern).
  */
 public class SalaryComponents {
     private BigDecimal basic = BigDecimal.ZERO;
@@ -24,7 +24,7 @@ public class SalaryComponents {
     }
 
     /**
-     * Copy constructor used for deep copying in the Prototype pattern.
+     * Copy constructor used for defensive copying.
      */
     public SalaryComponents(SalaryComponents other) {
         this.basic = other.basic;

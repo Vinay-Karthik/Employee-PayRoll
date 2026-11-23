@@ -21,7 +21,6 @@ import java.util.Scanner;
  * - Factory Method Pattern (calculator): SalaryCalculatorFactory creators for salary calculation.
  * - Abstract Factory Pattern (tax): Regime-based tax and deduction component creation.
  * - Builder Pattern (model): Validated immutable PayrollRequest construction.
- * - Prototype Pattern (model): Deep-copied customizable payroll templates.
  * - Singleton Pattern (config): Shared configuration provider.
  * - Facade Pattern (service): PayrollFacade orchestrates the monthly payroll workflow.
  */

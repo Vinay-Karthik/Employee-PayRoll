@@ -11,7 +11,6 @@ import tax.TaxRegime;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Scanner;
@@ -59,7 +58,7 @@ public class PayrollCLI {
                 case 3 -> handleIndividualPaySlip();
                 case 4 -> handleFullPayroll();
                 case 5 -> handleDeleteEmployee();
-                case 6 -> handleTemplatePayrollRequest();
+                case 6 -> handlePayrollRequest();
                 case 7 -> handleDynamicSalaryEnhancement();
                 case 8 -> {
                     running = false;
@@ -219,57 +218,66 @@ public class PayrollCLI {
     }
 
     /**
-     * Integrated creational-pattern flow:
-     * Prototype (clone a PayrollTemplate) -> customize clone ->
+     * Creational-pattern flow:
      * Builder (construct PayrollRequest) -> service processes it via
      * Factory Method + Abstract Factory -> PaySlip.
      */
-    private void handleTemplatePayrollRequest() {
+    private void handlePayrollRequest() {
         try {
-            List<PayrollTemplate> templates = PayrollTemplateCatalog.getTemplates();
-            view.displayMessage("\nAvailable payroll templates:");
-            for (int i = 0; i < templates.size(); i++) {
-                PayrollTemplate t = templates.get(i);
-                System.out.printf("  %d. %s (%s)%n", i + 1, t.getTemplateName(), t.getEmployeeType());
-            }
+            System.out.print("Enter Role Type (1=Permanent, 2=Contract, 3=Sales, 4=Executive): ");
+            int typeChoice = Integer.parseInt(scanner.nextLine().trim());
+            EmployeeType employeeType = switch (typeChoice) {
+                case 1 -> EmployeeType.PERMANENT;
+                case 2 -> EmployeeType.CONTRACT;
+                case 3 -> EmployeeType.SALES;
+                case 4 -> EmployeeType.EXECUTIVE;
+                default -> throw new IllegalArgumentException("Invalid employee type selection: " + typeChoice);
+            };
 
-            System.out.print("Select template (1-" + templates.size() + "): ");
-            int choice = Integer.parseInt(scanner.nextLine().trim());
-            if (choice < 1 || choice > templates.size()) {
-                view.displayMessage("Invalid template selection.");
-                return;
-            }
-
-            // Prototype pattern: clone the template so the original stays untouched
-            PayrollTemplate template = templates.get(choice - 1).clone();
-            view.displayMessage("Using template: " + template.getTemplateName());
-
-            // Descriptive metadata: bonus description / justification
-            System.out.print("Enter bonus description / details (Enter to keep '" + template.getBonusDetails() + "'): ");
-            String bonusInput = scanner.nextLine().trim();
-            if (!bonusInput.isEmpty()) {
-                template.setBonusDetails(bonusInput);
-            }
-
-            // Monetary bonus is represented as BigDecimal in SalaryComponents (not parsed from description)
-            if (template.getEmployeeType() == EmployeeType.EXECUTIVE
-                    || template.getSalaryComponents().getBonus().signum() > 0) {
-                System.out.print("Enter monetary bonus amount (Enter to keep " + template.getSalaryComponents().getBonus() + "): ");
-                String bonusAmtStr = scanner.nextLine().trim();
-                if (!bonusAmtStr.isEmpty()) {
-                    SalaryComponents comps = template.getSalaryComponents();
-                    comps.setBonus(parseAmount(bonusAmtStr));
-                    template.setSalaryComponents(comps);
+            SalaryComponents components = new SalaryComponents();
+            switch (employeeType) {
+                case PERMANENT -> {
+                    System.out.print("Enter Basic Salary: ");
+                    components.setBasic(parseAmount(scanner.nextLine()));
+                    System.out.print("Enter HRA: ");
+                    components.setHra(parseAmount(scanner.nextLine()));
+                    System.out.print("Enter Allowances: ");
+                    components.setAllowances(parseAmount(scanner.nextLine()));
+                }
+                case CONTRACT -> {
+                    System.out.print("Enter Fixed Contract Amount: ");
+                    components.setFixedContractAmount(parseAmount(scanner.nextLine()));
+                }
+                case SALES -> {
+                    System.out.print("Enter Fixed Salary: ");
+                    components.setFixedSalary(parseAmount(scanner.nextLine()));
+                    System.out.print("Enter Commission: ");
+                    components.setCommission(parseAmount(scanner.nextLine()));
+                }
+                case EXECUTIVE -> {
+                    System.out.print("Enter Fixed Salary: ");
+                    components.setFixedSalary(parseAmount(scanner.nextLine()));
+                    System.out.print("Enter Bonus: ");
+                    components.setBonus(parseAmount(scanner.nextLine()));
+                    System.out.print("Enter Benefits: ");
+                    components.setBenefits(parseAmount(scanner.nextLine()));
                 }
             }
 
-            PayrollRequest.Builder requestBuilder = new PayrollRequest.Builder()
-                    .employeeType(template.getEmployeeType())
-                    .salaryComponents(template.getSalaryComponents())
-                    .bonusDetails(template.getBonusDetails());
+            System.out.print("Enter bonus description / details (optional, press Enter to skip): ");
+            String bonusInput = scanner.nextLine().trim();
 
-            for (Map.Entry<String, BigDecimal> entry : template.getDeductions().entrySet()) {
-                requestBuilder.addDeduction(entry.getKey(), entry.getValue());
+            PayrollRequest.Builder requestBuilder = new PayrollRequest.Builder()
+                    .employeeType(employeeType)
+                    .salaryComponents(components)
+                    .bonusDetails(bonusInput.isEmpty() ? null : bonusInput);
+
+            System.out.print("Enter Deduction Name (optional, press Enter to skip): ");
+            String dedName = scanner.nextLine().trim();
+            if (!dedName.isEmpty()) {
+                System.out.print("Enter Deduction Amount: ");
+                BigDecimal dedAmt = parseAmount(scanner.nextLine());
+                requestBuilder.addDeduction(dedName, dedAmt);
             }
 
             System.out.print("Enter Employee ID: ");

@@ -75,6 +75,13 @@ public abstract class Employee {
     public abstract String getPayDetailsSummary();
 
     /**
+     * Returns the unified EmployeeType category for this employee.
+     */
+    public EmployeeType getEmployeeType() {
+        return EmployeeType.fromTypeCode(getTypeCode());
+    }
+
+    /**
      * Template method: Generates an immutable PaySlip by coordinating polymorphic calculations.
      * Guarantees DRY (Don't Repeat Yourself) principle across the application.
      */

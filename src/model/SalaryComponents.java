@@ -4,21 +4,20 @@ import java.math.BigDecimal;
 
 /**
  * Value Object holding salary components for an employee.
- * Not all fields are used by every calculator - each calculator
- * reads only the components relevant to its salary structure.
+ * Used across the unified employee classifications (Full-Time, Part-Time, Contractor, Intern).
  *
  * All monetary values use BigDecimal to avoid floating-point errors.
  * Includes copy constructor for defensive copying (Builder pattern).
  */
 public class SalaryComponents {
     private BigDecimal basic = BigDecimal.ZERO;
-    private BigDecimal hra = BigDecimal.ZERO;
-    private BigDecimal allowances = BigDecimal.ZERO;
-    private BigDecimal fixedContractAmount = BigDecimal.ZERO;
-    private BigDecimal fixedSalary = BigDecimal.ZERO;
-    private BigDecimal commission = BigDecimal.ZERO;
     private BigDecimal bonus = BigDecimal.ZERO;
-    private BigDecimal benefits = BigDecimal.ZERO;
+    private BigDecimal allowances = BigDecimal.ZERO;
+    private BigDecimal hra = BigDecimal.ZERO;
+    private BigDecimal hourlyRate = BigDecimal.ZERO;
+    private BigDecimal hoursWorked = BigDecimal.ZERO;
+    private BigDecimal fixedContractAmount = BigDecimal.ZERO;
+    private BigDecimal stipend = BigDecimal.ZERO;
 
     public SalaryComponents() {
     }
@@ -28,13 +27,13 @@ public class SalaryComponents {
      */
     public SalaryComponents(SalaryComponents other) {
         this.basic = other.basic;
-        this.hra = other.hra;
-        this.allowances = other.allowances;
-        this.fixedContractAmount = other.fixedContractAmount;
-        this.fixedSalary = other.fixedSalary;
-        this.commission = other.commission;
         this.bonus = other.bonus;
-        this.benefits = other.benefits;
+        this.allowances = other.allowances;
+        this.hra = other.hra;
+        this.hourlyRate = other.hourlyRate;
+        this.hoursWorked = other.hoursWorked;
+        this.fixedContractAmount = other.fixedContractAmount;
+        this.stipend = other.stipend;
     }
 
     private static BigDecimal requireNonNegative(String field, BigDecimal value) {
@@ -50,31 +49,31 @@ public class SalaryComponents {
     public BigDecimal getBasic() { return basic; }
     public void setBasic(BigDecimal basic) { this.basic = requireNonNegative("Basic", basic); }
 
-    public BigDecimal getHra() { return hra; }
-    public void setHra(BigDecimal hra) { this.hra = requireNonNegative("HRA", hra); }
+    public BigDecimal getBonus() { return bonus; }
+    public void setBonus(BigDecimal bonus) { this.bonus = requireNonNegative("Bonus", bonus); }
 
     public BigDecimal getAllowances() { return allowances; }
     public void setAllowances(BigDecimal allowances) { this.allowances = requireNonNegative("Allowances", allowances); }
 
+    public BigDecimal getHra() { return hra; }
+    public void setHra(BigDecimal hra) { this.hra = requireNonNegative("HRA", hra); }
+
+    public BigDecimal getHourlyRate() { return hourlyRate; }
+    public void setHourlyRate(BigDecimal hourlyRate) { this.hourlyRate = requireNonNegative("Hourly rate", hourlyRate); }
+
+    public BigDecimal getHoursWorked() { return hoursWorked; }
+    public void setHoursWorked(BigDecimal hoursWorked) { this.hoursWorked = requireNonNegative("Hours worked", hoursWorked); }
+
     public BigDecimal getFixedContractAmount() { return fixedContractAmount; }
     public void setFixedContractAmount(BigDecimal fixedContractAmount) { this.fixedContractAmount = requireNonNegative("Fixed contract amount", fixedContractAmount); }
 
-    public BigDecimal getFixedSalary() { return fixedSalary; }
-    public void setFixedSalary(BigDecimal fixedSalary) { this.fixedSalary = requireNonNegative("Fixed salary", fixedSalary); }
-
-    public BigDecimal getCommission() { return commission; }
-    public void setCommission(BigDecimal commission) { this.commission = requireNonNegative("Commission", commission); }
-
-    public BigDecimal getBonus() { return bonus; }
-    public void setBonus(BigDecimal bonus) { this.bonus = requireNonNegative("Bonus", bonus); }
-
-    public BigDecimal getBenefits() { return benefits; }
-    public void setBenefits(BigDecimal benefits) { this.benefits = requireNonNegative("Benefits", benefits); }
+    public BigDecimal getStipend() { return stipend; }
+    public void setStipend(BigDecimal stipend) { this.stipend = requireNonNegative("Stipend", stipend); }
 
     @Override
     public String toString() {
         return String.format(
-                "SalaryComponents{basic=%s, hra=%s, allowances=%s, fixedContract=%s, fixedSalary=%s, commission=%s, bonus=%s, benefits=%s}",
-                basic, hra, allowances, fixedContractAmount, fixedSalary, commission, bonus, benefits);
+                "SalaryComponents{basic=%s, bonus=%s, allowances=%s, hra=%s, hourlyRate=%s, hoursWorked=%s, fixedContract=%s, stipend=%s}",
+                basic, bonus, allowances, hra, hourlyRate, hoursWorked, fixedContractAmount, stipend);
     }
 }

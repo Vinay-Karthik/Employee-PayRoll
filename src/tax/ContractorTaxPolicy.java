@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 /**
  * Tax policy for Contractor employees (type code 3).
  * <p>
- * No tax withheld (contractors handle their own taxes).
+ * No tax withheld across regimes (contractors handle their own taxes).
  */
 public class ContractorTaxPolicy implements TaxPolicy {
 
@@ -15,6 +15,11 @@ public class ContractorTaxPolicy implements TaxPolicy {
 
     @Override
     public BigDecimal calculateTax(BigDecimal gross) {
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public BigDecimal calculateTax(BigDecimal gross, TaxRegime regime) {
         return BigDecimal.ZERO;
     }
 

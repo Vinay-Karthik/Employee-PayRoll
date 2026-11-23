@@ -10,7 +10,8 @@ import java.util.Objects;
  * GoF Factory Method Pattern: Abstract Creator.
  *
  * Defines the abstract factory method {@link #createCalculator()} which defers
- * instantiation of specific {@link SalaryCalculator} products to concrete creator subclasses.
+ * instantiation of specific {@link SalaryCalculator} products to concrete creator subclasses
+ * for the unified employee classifications (Full-Time, Part-Time, Contractor, Intern).
  */
 public abstract class SalaryCalculatorFactory {
 
@@ -40,10 +41,10 @@ public abstract class SalaryCalculatorFactory {
     public static SalaryCalculatorFactory forType(EmployeeType type) {
         Objects.requireNonNull(type, "Employee type must not be null");
         return switch (type) {
-            case PERMANENT -> new PermanentSalaryCalculatorFactory();
-            case CONTRACT -> new ContractSalaryCalculatorFactory();
-            case SALES -> new SalesSalaryCalculatorFactory();
-            case EXECUTIVE -> new ExecutiveSalaryCalculatorFactory();
+            case FULL_TIME -> new FullTimeSalaryCalculatorFactory();
+            case PART_TIME -> new PartTimeSalaryCalculatorFactory();
+            case CONTRACTOR -> new ContractorSalaryCalculatorFactory();
+            case INTERN -> new InternSalaryCalculatorFactory();
         };
     }
 

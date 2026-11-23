@@ -8,21 +8,29 @@ import java.util.Objects;
 
 /**
  * Strategy interface for tax calculation policies.
- * Encapsulates tax rules for each employee category so they can be reused
- * by both standard payslip calculation and enhanced payslip calculation.
- * <p>
- * Employee categories are identified by type codes:
- * 1 = Full-Time, 2 = Part-Time, 3 = Contractor, 4 = Intern
+ * Encapsulates tax rules for each employee category and supports
+ * tax regime selection (OLD vs NEW).
  */
 public interface TaxPolicy {
 
     /**
-     * Calculates tax for the given gross amount.
+     * Calculates tax for the given gross amount using default (NEW) regime.
      *
      * @param gross the gross salary amount to calculate tax on
      * @return calculated tax amount
      */
     BigDecimal calculateTax(BigDecimal gross);
+
+    /**
+     * Calculates tax for the given gross amount respecting the specified tax regime.
+     *
+     * @param gross the gross salary amount to calculate tax on
+     * @param regime the tax regime (OLD or NEW)
+     * @return calculated tax amount
+     */
+    default BigDecimal calculateTax(BigDecimal gross, TaxRegime regime) {
+        return calculateTax(gross);
+    }
 
     /**
      * Returns the employee type code this policy applies to.
@@ -57,7 +65,7 @@ public interface TaxPolicy {
     }
 
     /**
-     * Returns the tax policy for the given employee type category.
+     * Returns the tax policy for the given unified employee type category.
      *
      * @param employeeType the employee type category
      * @return the corresponding tax policy
@@ -65,9 +73,10 @@ public interface TaxPolicy {
     static TaxPolicy forEmployeeType(EmployeeType employeeType) {
         Objects.requireNonNull(employeeType, "Employee type must not be null");
         return switch (employeeType) {
-            case PERMANENT, EXECUTIVE -> FullTimeTaxPolicy.INSTANCE;
-            case CONTRACT -> ContractorTaxPolicy.INSTANCE;
-            case SALES -> PartTimeTaxPolicy.INSTANCE;
+            case FULL_TIME -> FullTimeTaxPolicy.INSTANCE;
+            case PART_TIME -> PartTimeTaxPolicy.INSTANCE;
+            case CONTRACTOR -> ContractorTaxPolicy.INSTANCE;
+            case INTERN -> InternTaxPolicy.INSTANCE;
         };
     }
 }

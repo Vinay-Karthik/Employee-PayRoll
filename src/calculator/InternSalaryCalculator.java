@@ -6,17 +6,17 @@ import model.SalaryComponents;
 import java.math.BigDecimal;
 
 /**
- * Permanent employees: Basic + HRA + Allowances.
+ * Intern employees: Monthly stipend.
  */
-public class PermanentSalaryCalculator implements SalaryCalculator {
+public class InternSalaryCalculator implements SalaryCalculator {
 
     @Override
     public BigDecimal calculateGross(SalaryComponents components) {
-        return components.getBasic().add(components.getHra()).add(components.getAllowances());
+        return components.getStipend().signum() > 0 ? components.getStipend() : components.getBasic();
     }
 
     @Override
     public EmployeeType getSupportedType() {
-        return EmployeeType.PERMANENT;
+        return EmployeeType.INTERN;
     }
 }

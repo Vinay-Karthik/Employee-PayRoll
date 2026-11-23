@@ -9,10 +9,7 @@ import java.util.Objects;
 /**
  * Strategy interface for deduction calculation policies.
  * Encapsulates deduction rules for each employee category so they can be reused
- * by both standard payslip calculation and enhanced payslip calculation.
- * <p>
- * Employee categories are identified by type codes:
- * 1 = Full-Time, 2 = Part-Time, 3 = Contractor, 4 = Intern
+ * across standard, enhanced, and request payroll flows.
  */
 public interface DeductionPolicy {
 
@@ -57,7 +54,7 @@ public interface DeductionPolicy {
     }
 
     /**
-     * Returns the deduction policy for the given employee type category.
+     * Returns the deduction policy for the given unified employee type category.
      *
      * @param employeeType the employee type category
      * @return the corresponding deduction policy
@@ -65,9 +62,10 @@ public interface DeductionPolicy {
     static DeductionPolicy forEmployeeType(EmployeeType employeeType) {
         Objects.requireNonNull(employeeType, "Employee type must not be null");
         return switch (employeeType) {
-            case PERMANENT, EXECUTIVE -> FullTimeDeductionPolicy.INSTANCE;
-            case CONTRACT -> ContractorDeductionPolicy.INSTANCE;
-            case SALES -> PartTimeDeductionPolicy.INSTANCE;
+            case FULL_TIME -> FullTimeDeductionPolicy.INSTANCE;
+            case PART_TIME -> PartTimeDeductionPolicy.INSTANCE;
+            case CONTRACTOR -> ContractorDeductionPolicy.INSTANCE;
+            case INTERN -> InternDeductionPolicy.INSTANCE;
         };
     }
 }

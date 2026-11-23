@@ -109,13 +109,6 @@ public class SalaryEnhancementPipeline {
     }
 
     /**
-     * Returns the underlying decorated SalaryCalculator component.
-     */
-    public SalaryCalculator getCalculator() {
-        return currentCalculator;
-    }
-
-    /**
      * Returns the underlying base salary.
      */
     public BigDecimal getBaseSalary() {

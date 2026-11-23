@@ -21,7 +21,7 @@ import java.util.Scanner;
  * - Factory Method Pattern (calculator): SalaryCalculatorFactory creators for salary calculation.
  * - Strategy Pattern (tax): TaxPolicy and DeductionPolicy for category-specific tax and deduction calculation.
  * - Builder Pattern (model): Validated immutable PayrollRequest construction.
- * - Facade Pattern (service): PayrollFacade orchestrates the monthly payroll workflow.
+ * - Facade Pattern (service): PayrollFacade coordinates the monthly payroll workflow and owns report exporting.
  */
 public class PayrollSystem {
     private static final String DEFAULT_REPORT_FILE = "payroll_summary_report.txt";
@@ -29,22 +29,19 @@ public class PayrollSystem {
     private static final String DEFAULT_FINANCIAL_YEAR = "FY2025-26";
 
     public static void main(String[] args) {
-        // Core reporting dependency
-        ReportExporter reportExporter = new FileReportExporter();
-
         // 1. Employee Repository Setup (Domain storage decoupled from external systems):
         EmployeeRepository employeeRepository = new InMemoryEmployeeRepository();
 
         // 2. Inject EmployeeRepository and configuration into PayrollService via Constructor Injection
         PayrollService payrollService = new PayrollServiceImpl(
                 employeeRepository,
-                reportExporter,
                 SalaryCalculatorFactory::forType,
                 DEFAULT_CURRENCY,
                 DEFAULT_FINANCIAL_YEAR
         );
 
-        // 3. Create Facade for orchestrating monthly payroll workflow
+        // 3. Facade coordinates monthly payroll and owns the ReportExporter dependency
+        ReportExporter reportExporter = new FileReportExporter();
         PayrollFacade payrollFacade = new PayrollFacade(payrollService, reportExporter);
 
         ConsoleView view = new ConsoleView(DEFAULT_CURRENCY);

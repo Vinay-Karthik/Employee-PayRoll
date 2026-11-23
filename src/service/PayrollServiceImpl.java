@@ -6,18 +6,12 @@ import decorator.DecoratorType;
 import decorator.SalaryEnhancementPipeline;
 import model.Employee;
 import model.EmployeeType;
-import model.FullTimeEmployee;
-import model.PartTimeEmployee;
-import model.ContractorEmployee;
-import model.InternEmployee;
 import model.PaySlip;
 import model.PayrollRequest;
-import report.ReportExporter;
 import repository.EmployeeRepository;
 import tax.DeductionPolicy;
 import tax.TaxPolicy;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -27,11 +21,11 @@ import java.util.function.Function;
 
 /**
  * Concrete implementation of PayrollService.
- * Coordinates employee repository, domain calculations, and report generation.
+ * Coordinates employee repository, domain calculations, and summary report formatting.
+ * Report exporting is delegated exclusively to PayrollFacade.
  */
 public class PayrollServiceImpl implements PayrollService {
     private final EmployeeRepository employeeRepository;
-    private final ReportExporter reportExporter;
     private final Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver;
     private final String currency;
     private final String financialYear;
@@ -41,26 +35,22 @@ public class PayrollServiceImpl implements PayrollService {
      * Configuration parameters (currency, financialYear) are injected directly.
      */
     public PayrollServiceImpl(EmployeeRepository employeeRepository,
-                              ReportExporter reportExporter,
                               Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver,
                               String currency,
                               String financialYear) {
         this.employeeRepository = Objects.requireNonNull(employeeRepository, "EmployeeRepository must not be null");
-        this.reportExporter = Objects.requireNonNull(reportExporter, "Report exporter must not be null");
         this.salaryCalculatorFactoryResolver = Objects.requireNonNull(salaryCalculatorFactoryResolver, "Factory resolver must not be null");
         this.currency = (currency != null && !currency.isBlank()) ? currency : "USD";
         this.financialYear = (financialYear != null && !financialYear.isBlank()) ? financialYear : "FY2025-26";
     }
 
     public PayrollServiceImpl(EmployeeRepository employeeRepository,
-                              ReportExporter reportExporter,
                               Function<EmployeeType, SalaryCalculatorFactory> salaryCalculatorFactoryResolver) {
-        this(employeeRepository, reportExporter, salaryCalculatorFactoryResolver, "USD", "FY2025-26");
+        this(employeeRepository, salaryCalculatorFactoryResolver, "USD", "FY2025-26");
     }
 
-    public PayrollServiceImpl(EmployeeRepository employeeRepository,
-                              ReportExporter reportExporter) {
-        this(employeeRepository, reportExporter, SalaryCalculatorFactory::forType, "USD", "FY2025-26");
+    public PayrollServiceImpl(EmployeeRepository employeeRepository) {
+        this(employeeRepository, SalaryCalculatorFactory::forType, "USD", "FY2025-26");
     }
 
     @Override
@@ -111,7 +101,8 @@ public class PayrollServiceImpl implements PayrollService {
         TaxPolicy taxPolicy = TaxPolicy.forEmployeeType(request.getEmployeeType());
         DeductionPolicy deductionPolicy = DeductionPolicy.forEmployeeType(request.getEmployeeType());
 
-        BigDecimal tax = taxPolicy.calculateTax(gross);
+        // Respect the selected tax regime (OLD or NEW) from request
+        BigDecimal tax = taxPolicy.calculateTax(gross, request.getTaxRegime());
         BigDecimal deductions = deductionPolicy.calculateDeductions(gross)
                 .add(request.totalOptionalDeductions());
         BigDecimal net = gross.subtract(tax).subtract(deductions);
@@ -129,7 +120,7 @@ public class PayrollServiceImpl implements PayrollService {
                 request.getEmployeeId(),
                 request.getEmployeeName(),
                 request.getDepartment(),
-                request.getEmployeeType().name(),
+                request.getEmployeeType().getDisplayName(),
                 request.getBankAccountNumber(),
                 gross, tax, deductions, net,
                 effectiveFinancialYear,
@@ -182,11 +173,6 @@ public class PayrollServiceImpl implements PayrollService {
     }
 
     @Override
-    public void exportSummaryReport(String reportContent, String destination) throws IOException {
-        reportExporter.export(reportContent, destination);
-    }
-
-    @Override
     public SalaryEnhancementPipeline createSalaryEnhancementPipeline(BigDecimal baseSalary) {
         return new SalaryEnhancementPipeline(baseSalary);
     }
@@ -200,9 +186,15 @@ public class PayrollServiceImpl implements PayrollService {
      * @param employeeId the ID of the employee
      * @param decoratorTypes the decorator types to apply (e.g., HRA, TRANSPORT_ALLOWANCE)
      * @return Optional containing the enhanced PaySlip, or empty if employee not found
+     * @throws NullPointerException if decoratorTypes array or any of its elements is null
      */
     @Override
     public Optional<PaySlip> generateEnhancedPaySlip(int employeeId, DecoratorType... decoratorTypes) {
+        Objects.requireNonNull(decoratorTypes, "decoratorTypes array must not be null");
+        for (int i = 0; i < decoratorTypes.length; i++) {
+            Objects.requireNonNull(decoratorTypes[i], "decoratorTypes[" + i + "] must not be null");
+        }
+
         return employeeRepository.findById(employeeId).map(employee -> {
             SalaryEnhancementPipeline pipeline = new SalaryEnhancementPipeline(extractBaseSalary(employee));
             for (DecoratorType type : decoratorTypes) {
@@ -219,12 +211,19 @@ public class PayrollServiceImpl implements PayrollService {
      * @param employeeId the ID of the employee
      * @param decoratorCustomAmounts map of decorator types to custom amounts
      * @return Optional containing the enhanced PaySlip, or empty if employee not found
+     * @throws NullPointerException if decoratorCustomAmounts map or any key/value is null
      */
     @Override
-    public Optional<PaySlip> generateEnhancedPaySlip(int employeeId, java.util.Map<DecoratorType, BigDecimal> decoratorCustomAmounts) {
+    public Optional<PaySlip> generateEnhancedPaySlip(int employeeId, Map<DecoratorType, BigDecimal> decoratorCustomAmounts) {
+        Objects.requireNonNull(decoratorCustomAmounts, "decoratorCustomAmounts map must not be null");
+        for (Map.Entry<DecoratorType, BigDecimal> entry : decoratorCustomAmounts.entrySet()) {
+            Objects.requireNonNull(entry.getKey(), "DecoratorType key in map must not be null");
+            Objects.requireNonNull(entry.getValue(), "Custom amount value for " + entry.getKey() + " must not be null");
+        }
+
         return employeeRepository.findById(employeeId).map(employee -> {
             SalaryEnhancementPipeline pipeline = new SalaryEnhancementPipeline(extractBaseSalary(employee));
-            for (java.util.Map.Entry<DecoratorType, BigDecimal> entry : decoratorCustomAmounts.entrySet()) {
+            for (Map.Entry<DecoratorType, BigDecimal> entry : decoratorCustomAmounts.entrySet()) {
                 pipeline.applyDecorator(entry.getKey(), entry.getValue());
             }
             return createPaySlipFromPipeline(employee, pipeline);
@@ -261,13 +260,10 @@ public class PayrollServiceImpl implements PayrollService {
 
     /**
      * Extracts the base salary from an employee for the enhancement pipeline.
-     * Uses the employee's full gross pay (including bonus, overtime, etc.) as the starting point
-     * for the decorator pipeline, so that enhancements are applied on top of the complete
-     * standard compensation.
+     * Uses the employee's full gross pay as the starting point for the decorator pipeline.
      *
      * @param employee the employee to extract base salary from
      * @return the employee's standard gross pay
-     * @throws IllegalArgumentException if employee type is unsupported
      */
     private BigDecimal extractBaseSalary(Employee employee) {
         return employee.calculateGrossPay();

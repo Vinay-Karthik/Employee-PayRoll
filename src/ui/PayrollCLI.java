@@ -203,43 +203,47 @@ public class PayrollCLI {
      */
     private void handlePayrollRequest() {
         try {
-            System.out.print("Enter Role Type (1=Permanent, 2=Contract, 3=Sales, 4=Executive): ");
+            System.out.print("Enter Role Type (1=Full-Time, 2=Part-Time, 3=Contractor, 4=Intern): ");
             int typeChoice = Integer.parseInt(scanner.nextLine().trim());
             EmployeeType employeeType = switch (typeChoice) {
-                case 1 -> EmployeeType.PERMANENT;
-                case 2 -> EmployeeType.CONTRACT;
-                case 3 -> EmployeeType.SALES;
-                case 4 -> EmployeeType.EXECUTIVE;
+                case 1 -> EmployeeType.FULL_TIME;
+                case 2 -> EmployeeType.PART_TIME;
+                case 3 -> EmployeeType.CONTRACTOR;
+                case 4 -> EmployeeType.INTERN;
                 default -> throw new IllegalArgumentException("Invalid employee type selection: " + typeChoice);
             };
 
             SalaryComponents components = new SalaryComponents();
             switch (employeeType) {
-                case PERMANENT -> {
-                    System.out.print("Enter Basic Salary: ");
+                case FULL_TIME -> {
+                    System.out.print("Enter Monthly Base Salary: ");
                     components.setBasic(parseAmount(scanner.nextLine()));
-                    System.out.print("Enter HRA: ");
-                    components.setHra(parseAmount(scanner.nextLine()));
-                    System.out.print("Enter Allowances: ");
+                    System.out.print("Enter Monthly Bonus: ");
+                    components.setBonus(parseAmount(scanner.nextLine()));
+                    System.out.print("Enter Allowances (Enter 0 if none): ");
                     components.setAllowances(parseAmount(scanner.nextLine()));
                 }
-                case CONTRACT -> {
-                    System.out.print("Enter Fixed Contract Amount: ");
-                    components.setFixedContractAmount(parseAmount(scanner.nextLine()));
+                case PART_TIME -> {
+                    System.out.print("Enter Hourly Rate: ");
+                    components.setHourlyRate(parseAmount(scanner.nextLine()));
+                    System.out.print("Enter Hours Worked this month: ");
+                    components.setHoursWorked(parseAmount(scanner.nextLine()));
                 }
-                case SALES -> {
-                    System.out.print("Enter Fixed Salary: ");
-                    components.setFixedSalary(parseAmount(scanner.nextLine()));
-                    System.out.print("Enter Commission: ");
-                    components.setCommission(parseAmount(scanner.nextLine()));
+                case CONTRACTOR -> {
+                    System.out.print("Enter Contractor Hourly Rate / Fixed Amount: ");
+                    BigDecimal amount = parseAmount(scanner.nextLine());
+                    System.out.print("Enter Billed Hours (or 0 for fixed contract): ");
+                    BigDecimal hours = parseAmount(scanner.nextLine());
+                    if (hours.signum() > 0) {
+                        components.setHourlyRate(amount);
+                        components.setHoursWorked(hours);
+                    } else {
+                        components.setFixedContractAmount(amount);
+                    }
                 }
-                case EXECUTIVE -> {
-                    System.out.print("Enter Fixed Salary: ");
-                    components.setFixedSalary(parseAmount(scanner.nextLine()));
-                    System.out.print("Enter Bonus: ");
-                    components.setBonus(parseAmount(scanner.nextLine()));
-                    System.out.print("Enter Benefits: ");
-                    components.setBenefits(parseAmount(scanner.nextLine()));
+                case INTERN -> {
+                    System.out.print("Enter Intern Monthly Stipend: ");
+                    components.setStipend(parseAmount(scanner.nextLine()));
                 }
             }
 

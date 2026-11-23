@@ -6,19 +6,20 @@ import model.SalaryComponents;
 import java.math.BigDecimal;
 
 /**
- * Executive employees: Fixed salary + Bonus + Benefits.
+ * Full-time salaried employees: Basic + Bonus + Allowances + HRA.
  */
-public class ExecutiveSalaryCalculator implements SalaryCalculator {
+public class FullTimeSalaryCalculator implements SalaryCalculator {
 
     @Override
     public BigDecimal calculateGross(SalaryComponents components) {
-        return components.getFixedSalary()
+        return components.getBasic()
                 .add(components.getBonus())
-                .add(components.getBenefits());
+                .add(components.getAllowances())
+                .add(components.getHra());
     }
 
     @Override
     public EmployeeType getSupportedType() {
-        return EmployeeType.EXECUTIVE;
+        return EmployeeType.FULL_TIME;
     }
 }

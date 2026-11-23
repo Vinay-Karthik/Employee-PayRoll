@@ -2,6 +2,7 @@ package model;
 
 import tax.DeductionPolicy;
 import tax.TaxPolicy;
+import tax.TaxRegime;
 
 import java.math.BigDecimal;
 
@@ -19,7 +20,12 @@ public class FullTimeEmployee extends Employee {
 
     public FullTimeEmployee(int id, String name, String email, String department, String bankAccountNumber,
                             BigDecimal baseSalary, BigDecimal bonus) {
-        super(id, name, email, department, bankAccountNumber);
+        this(id, name, email, department, bankAccountNumber, baseSalary, bonus, TaxRegime.NEW);
+    }
+
+    public FullTimeEmployee(int id, String name, String email, String department, String bankAccountNumber,
+                            BigDecimal baseSalary, BigDecimal bonus, TaxRegime taxRegime) {
+        super(id, name, email, department, bankAccountNumber, taxRegime);
         if (baseSalary == null || bonus == null) {
             throw new IllegalArgumentException("Base salary and bonus must not be null");
         }
@@ -59,7 +65,7 @@ public class FullTimeEmployee extends Employee {
 
     @Override
     public BigDecimal calculateTax() {
-        return TaxPolicy.forEmployee(this).calculateTax(calculateGrossPay());
+        return TaxPolicy.forEmployee(this).calculateTax(calculateGrossPay(), getTaxRegime());
     }
 
     @Override

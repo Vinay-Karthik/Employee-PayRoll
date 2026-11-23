@@ -110,32 +110,34 @@ public class PayrollCLI {
             System.out.print("Enter Role Type (1=Full-Time, 2=Part-Time, 3=Contractor, 4=Intern): ");
             int type = Integer.parseInt(scanner.nextLine().trim());
 
+            TaxRegime taxRegime = promptTaxRegime();
+
             Employee newEmployee = switch (type) {
                 case 1 -> {
                     System.out.print("Enter Monthly Base Salary: ");
                     BigDecimal salary = parseAmount(scanner.nextLine());
                     System.out.print("Enter Monthly Bonus: ");
                     BigDecimal bonus = parseAmount(scanner.nextLine());
-                    yield new FullTimeEmployee(id, name, email, dept, account, salary, bonus);
+                    yield new FullTimeEmployee(id, name, email, dept, account, salary, bonus, taxRegime);
                 }
                 case 2 -> {
                     System.out.print("Enter Hourly Rate: ");
                     BigDecimal rate = parseAmount(scanner.nextLine());
                     System.out.print("Enter Hours Worked this month: ");
                     BigDecimal hours = parseAmount(scanner.nextLine());
-                    yield new PartTimeEmployee(id, name, email, dept, account, rate, hours);
+                    yield new PartTimeEmployee(id, name, email, dept, account, rate, hours, taxRegime);
                 }
                 case 3 -> {
                     System.out.print("Enter Contractor Hourly Rate: ");
                     BigDecimal rate = parseAmount(scanner.nextLine());
                     System.out.print("Enter Billed Hours: ");
                     BigDecimal hours = parseAmount(scanner.nextLine());
-                    yield new ContractorEmployee(id, name, email, dept, account, rate, hours);
+                    yield new ContractorEmployee(id, name, email, dept, account, rate, hours, taxRegime);
                 }
                 case 4 -> {
                     System.out.print("Enter Intern Monthly Stipend: ");
                     BigDecimal stipend = parseAmount(scanner.nextLine());
-                    yield new InternEmployee(id, name, email, dept, account, stipend);
+                    yield new InternEmployee(id, name, email, dept, account, stipend, taxRegime);
                 }
                 default -> throw new IllegalArgumentException("Unknown employee role type: " + type);
             };
@@ -281,14 +283,7 @@ public class PayrollCLI {
             String fy = scanner.nextLine().trim();
             requestBuilder.financialYear(fy.isEmpty() ? defaultFinancialYear : fy);
 
-            System.out.print("Enter Tax Regime (1=OLD, 2=NEW) [NEW]: ");
-            String regimeInput = scanner.nextLine().trim();
-            TaxRegime regime = TaxRegime.NEW;
-            if (regimeInput.equals("1")) {
-                regime = TaxRegime.OLD;
-            } else if (regimeInput.equals("2")) {
-                regime = TaxRegime.NEW;
-            }
+            TaxRegime regime = promptTaxRegime();
             requestBuilder.taxRegime(regime);
 
             PayrollRequest request = requestBuilder.build();
@@ -371,6 +366,20 @@ public class PayrollCLI {
 
         } catch (IllegalArgumentException | IllegalStateException e) {
             view.displayMessage("Error: " + e.getMessage());
+        }
+    }
+
+    private TaxRegime promptTaxRegime() {
+        while (true) {
+            System.out.print("Enter Tax Regime (1=OLD, 2=NEW) [NEW]: ");
+            String regimeInput = scanner.nextLine().trim();
+            if (regimeInput.isEmpty() || regimeInput.equals("2")) {
+                return TaxRegime.NEW;
+            } else if (regimeInput.equals("1")) {
+                return TaxRegime.OLD;
+            } else {
+                view.displayMessage("Invalid input! Please enter 1 for OLD or 2 for NEW.");
+            }
         }
     }
 

@@ -61,7 +61,8 @@ public interface TaxPolicy {
      * @return the corresponding tax policy
      */
     static TaxPolicy forEmployee(Employee employee) {
-        return forTypeCode(employee.getTypeCode());
+        Objects.requireNonNull(employee, "Employee must not be null");
+        return forEmployeeType(employee.getEmployeeType());
     }
 
     /**

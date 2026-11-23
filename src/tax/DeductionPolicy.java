@@ -50,7 +50,8 @@ public interface DeductionPolicy {
      * @return the corresponding deduction policy
      */
     static DeductionPolicy forEmployee(Employee employee) {
-        return forTypeCode(employee.getTypeCode());
+        Objects.requireNonNull(employee, "Employee must not be null");
+        return forEmployeeType(employee.getEmployeeType());
     }
 
     /**

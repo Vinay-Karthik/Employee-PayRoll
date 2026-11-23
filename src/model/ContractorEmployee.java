@@ -2,6 +2,7 @@ package model;
 
 import tax.DeductionPolicy;
 import tax.TaxPolicy;
+import tax.TaxRegime;
 
 import java.math.BigDecimal;
 
@@ -19,7 +20,12 @@ public class ContractorEmployee extends Employee {
 
     public ContractorEmployee(int id, String name, String email, String department, String bankAccountNumber,
                               BigDecimal hourlyRate, BigDecimal hoursWorked) {
-        super(id, name, email, department, bankAccountNumber);
+        this(id, name, email, department, bankAccountNumber, hourlyRate, hoursWorked, TaxRegime.NEW);
+    }
+
+    public ContractorEmployee(int id, String name, String email, String department, String bankAccountNumber,
+                              BigDecimal hourlyRate, BigDecimal hoursWorked, TaxRegime taxRegime) {
+        super(id, name, email, department, bankAccountNumber, taxRegime);
         if (hourlyRate == null || hoursWorked == null) {
             throw new IllegalArgumentException("Hourly rate and hours worked must not be null");
         }
@@ -59,7 +65,7 @@ public class ContractorEmployee extends Employee {
 
     @Override
     public BigDecimal calculateTax() {
-        return TaxPolicy.forEmployee(this).calculateTax(calculateGrossPay());
+        return TaxPolicy.forEmployee(this).calculateTax(calculateGrossPay(), getTaxRegime());
     }
 
     @Override

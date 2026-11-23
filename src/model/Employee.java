@@ -1,5 +1,7 @@
 package model;
 
+import tax.TaxRegime;
+
 import java.math.BigDecimal;
 import java.util.Objects;
 
@@ -16,8 +18,13 @@ public abstract class Employee {
     private String email;
     private String department;
     private String bankAccountNumber;
+    private TaxRegime taxRegime;
 
     protected Employee(int id, String name, String email, String department, String bankAccountNumber) {
+        this(id, name, email, department, bankAccountNumber, TaxRegime.NEW);
+    }
+
+    protected Employee(int id, String name, String email, String department, String bankAccountNumber, TaxRegime taxRegime) {
         if (id <= 0) {
             throw new IllegalArgumentException("Employee ID must be positive: " + id);
         }
@@ -26,6 +33,7 @@ public abstract class Employee {
         this.email = Objects.requireNonNull(email, "Email must not be null");
         this.department = Objects.requireNonNull(department, "Department must not be null");
         this.bankAccountNumber = Objects.requireNonNull(bankAccountNumber, "Bank account must not be null");
+        this.taxRegime = taxRegime != null ? taxRegime : TaxRegime.NEW;
     }
 
     // Getters & Setters (Encapsulation)
@@ -63,6 +71,14 @@ public abstract class Employee {
 
     public void setBankAccountNumber(String bankAccountNumber) {
         this.bankAccountNumber = Objects.requireNonNull(bankAccountNumber, "Bank account must not be null");
+    }
+
+    public TaxRegime getTaxRegime() {
+        return taxRegime;
+    }
+
+    public void setTaxRegime(TaxRegime taxRegime) {
+        this.taxRegime = taxRegime != null ? taxRegime : TaxRegime.NEW;
     }
 
     // Abstract polymorphic contracts

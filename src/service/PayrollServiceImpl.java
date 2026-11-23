@@ -11,6 +11,7 @@ import model.PayrollRequest;
 import repository.EmployeeRepository;
 import tax.DeductionPolicy;
 import tax.TaxPolicy;
+import tax.TaxRegime;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -274,7 +275,7 @@ public class PayrollServiceImpl implements PayrollService {
      * Delegates to the shared {@link TaxPolicy} for the employee's type.
      */
     private BigDecimal calculateTaxForEmployee(Employee employee, BigDecimal enhancedGross) {
-        return TaxPolicy.forEmployee(employee).calculateTax(enhancedGross);
+        return TaxPolicy.forEmployee(employee).calculateTax(enhancedGross, employee.getTaxRegime());
     }
 
     /**

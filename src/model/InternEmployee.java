@@ -2,6 +2,7 @@ package model;
 
 import tax.DeductionPolicy;
 import tax.TaxPolicy;
+import tax.TaxRegime;
 
 import java.math.BigDecimal;
 
@@ -17,7 +18,11 @@ public class InternEmployee extends Employee {
     private BigDecimal stipend;
 
     public InternEmployee(int id, String name, String email, String department, String bankAccountNumber, BigDecimal stipend) {
-        super(id, name, email, department, bankAccountNumber);
+        this(id, name, email, department, bankAccountNumber, stipend, TaxRegime.NEW);
+    }
+
+    public InternEmployee(int id, String name, String email, String department, String bankAccountNumber, BigDecimal stipend, TaxRegime taxRegime) {
+        super(id, name, email, department, bankAccountNumber, taxRegime);
         if (stipend == null || stipend.signum() < 0) {
             throw new IllegalArgumentException("Stipend must be non-negative");
         }
@@ -42,7 +47,7 @@ public class InternEmployee extends Employee {
 
     @Override
     public BigDecimal calculateTax() {
-        return TaxPolicy.forEmployee(this).calculateTax(calculateGrossPay());
+        return TaxPolicy.forEmployee(this).calculateTax(calculateGrossPay(), getTaxRegime());
     }
 
     @Override
